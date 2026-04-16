@@ -1,0 +1,62 @@
+{
+  "marqueeItems": [
+    "AniLand'e Hoş Geldiniz!",
+    "Yeni animeler ekleniyor...",
+    "Anime izlemek için giriş yapp",
+    "AniLand'e Hoş Geldiniz!",
+    "Yeni animeler ekleniyor...",
+    "Anime izlemek için giriş yapp",
+    "AniLand'e Hoş Geldiniz!",
+    "Yeni animeler ekleniyor...",
+    "Anime izlemek için giriş yapp"
+  ],
+  "featuredAnime": {
+    "slug": "suzume-no-tojimari",
+    "title": "Suzume no Tojimari",
+    "desc": "Bir gün okula giderken Suzume Iwato, terk edilmiş bölgeleri arayan genç bir adam olan Souta Munakata'ya rastlar. Liseli kız, Souta'yı yakındaki bir harabeye yönlendirir, ancak sırf meraktan kendisi de aynı hedefe gitmeye karar verir.\n\nSuzume oraya vardığında, arkasında rüya gibi bir evrenin uzandığı izole bir kapı keşfeder; görebildiği ve hissedebildiği ancak giremediği bir yer. Yakınlarda yerde garip bir taş duruyor, ancak kedi benzeri bir yaratığa dönüşüyor ve Suzume onu kaldırdığında koşarak uzaklaşıyor. Aniden korkarak okuluna doğru yola çıkar ama kapıyı açık bırakmasının sonuçları olacağını fark etmez.\n\n\"Kilit taşı\"nın serbest bırakılmasıyla, diğer evrendeki kötülük artık özgürce kaçabilir ve Japonya'nın her yerine zarar verebilir. Tehlikeli hatasını düzeltmeyi amaçlayan Suzume, ülke yok edilmeden önce tüm açık kapıları bulup kilitlemek için asıl amacı kötülüğün çoğalmasını önlemek olan Souta'ya katılır.",
+    "genres": [
+      "Dram"
+    ],
+    "emoji": "😢",
+    "btnText": "▶ Şimdi İzle",
+    "coverImage": "https://wsrv.nl/?url=https%3A%2F%2Fimage.tmdb.org%2Ft%2Fp%2Fw300%2FvIeu8WysZrTSFb2uhPViKjX9EcC.jpg",
+    "color1": "#1a0a2e",
+    "color2": "#2e0a1a"
+  },
+  "homeSchedule": [
+    {
+      "day": "Pzt",
+      "items": [
+        "asd"
+      ]
+    },
+    {
+      "day": "Sal",
+      "items": [
+        "asd"
+      ]
+    },
+    {
+      "day": "Çar",
+      "items": [
+        "asd"
+      ]
+    },
+    {
+      "day": "Per",
+      "items": []
+    },
+    {
+      "day": "Cum",
+      "items": []
+    },
+    {
+      "day": "Cmt",
+      "items": []
+    },
+    {
+      "day": "Paz",
+      "items": []
+    }
+  ]
+}

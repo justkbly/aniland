@@ -1,0 +1,9 @@
+node_modules/
+.claude/
+bool
+list
+anime scrape/
+*.py
+dandadan_yapisi.html
+sayfa_yapisi.html
+video_linkleri*.txt
