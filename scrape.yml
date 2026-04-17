@@ -1,0 +1,40 @@
+name: Anime Scraper
+
+on:
+  push:
+    paths:
+      - 'anime scrape/anime_links.txt'
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Python kur
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Bağımlılıkları kur
+        run: pip install selenium webdriver-manager playwright requests
+
+      - name: Playwright Chromium kur
+        run: playwright install chromium
+
+      - name: Scraper çalıştır
+        env:
+          SERVER_URL: ${{ secrets.SERVER_URL }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+        run: python toplu_ekle.py
+
+      - name: Güncel links dosyasını kaydet
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "anime scrape/anime_links.txt"
+          git diff --staged --quiet || git commit -m "İşlenen animeler listeden silindi"
+          git push
