@@ -3717,12 +3717,6 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
         <span style="font-size:0.75rem;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;white-space:nowrap;">Çeviri:</span>
       </div>
 
-      <!-- EPISODES -->
-      <div class="ep-section">
-        <div class="ep-section-title">📋 Bölümler</div>
-        <div class="ep-grid" id="epGrid"></div>
-      </div>
-
       <!-- RATING -->
       <div class="rating-section" id="ratingSection">
         <div class="rating-title">⭐ Puan Ver</div>
@@ -4289,6 +4283,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
         
         videoElement.src = embedUrl;
         videoElement.style.display = 'block';
+        videoElement.play().catch(() => {});
       } else {
         // Embed URL'ler için iframe
         iframe.src = embedUrl;
@@ -4373,7 +4368,12 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
         const dispNum = epMatch ? parseInt(epMatch[1]) : i;
         const seasonMatch = titleStr.match(/^S(\d+)/i);
         const seasonLabel = seasonMatch ? 'S' + seasonMatch[1] + ' · ' : '';
-        card.innerHTML = `<div class="sidebar-thumb" style="background:linear-gradient(135deg,var(--surface),rgba(99,102,241,0.15));font-size:1rem;display:flex;align-items:center;justify-content:center;color:var(--muted);font-weight:700;">${dispNum}</div><div class="sidebar-info"><div class="sidebar-title" style="font-size:0.82rem;">${seasonLabel}Bölüm ${dispNum}</div>${titleStr ? '<div class="sidebar-ep">' + escHtml(titleStr.replace(/^S\d+E\d+\s*[-–]?\s*/i,'')) + '</div>' : ''}</div>`;
+        const epMeta = currentEpMeta[String(i)] || {};
+        const thumbUrl = epMeta.thumbnails ? epMeta.thumbnails['0'] || epMeta.thumbnails[Object.keys(epMeta.thumbnails)[0]] : '';
+        const thumbHtml = thumbUrl
+          ? `<div class="sidebar-thumb" style="background:url('${thumbUrl}') center/cover no-repeat;"></div>`
+          : `<div class="sidebar-thumb" style="background:linear-gradient(135deg,var(--surface),rgba(99,102,241,0.15));font-size:1rem;display:flex;align-items:center;justify-content:center;color:var(--muted);font-weight:700;">${dispNum}</div>`;
+        card.innerHTML = `${thumbHtml}<div class="sidebar-info"><div class="sidebar-title" style="font-size:0.82rem;">${seasonLabel}Bölüm ${dispNum}</div>${titleStr ? '<div class="sidebar-ep">' + escHtml(titleStr.replace(/^S\d+E\d+\s*[-–]?\s*/i,'')) + '</div>' : ''}</div>`;
         if (hasLink) card.addEventListener('click', () => loadEpisode(i));
         sidebarScroll.appendChild(card);
       }
