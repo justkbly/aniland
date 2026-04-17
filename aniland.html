@@ -1718,6 +1718,14 @@
     gap: 0.5rem;
   }
 
+  .ep-season-header {
+    width: 100%; grid-column: 1 / -1;
+    font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--neon);
+    padding: 0.5rem 0.2rem 0.2rem;
+    border-bottom: 1px solid rgba(0,245,212,0.2);
+    margin-bottom: 0.2rem;
+  }
   .ep-btn {
     aspect-ratio: 1;
     background: rgba(30,30,53,0.7);
@@ -4343,18 +4351,42 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
   function buildEpGrid() {
     const grid = document.getElementById('epGrid');
     grid.innerHTML = '';
+
+    // epTitles'dan sezon gruplarını çıkar (örn: "S2E3 - ..." → sezon 2)
+    const seasonMap = {}; // { 1: [1,2,3,...], 2: [15,16,...] }
+    const epSeasonOf = {}; // { epNum: seasonNum }
     for (let i = 1; i <= animeData.totalEps; i++) {
-      const btn = document.createElement('button');
-      const hasLink = !!currentEpLinks[String(i)];
-      btn.className = 'ep-btn' + (i === currentEp ? ' current' : '') + (hasLink ? ' has-link' : ' no-link');
-      btn.textContent = i;
-      btn.title = hasLink ? 'Bölüm ' + i + ' — İzle' : 'Bölüm ' + i + ' — Link yok';
-      btn.addEventListener('click', () => {
-        if (!hasLink) { showToast('⚠ Bu bölüm için henüz link eklenmemiş.'); return; }
-        loadEpisode(i);
-      });
-      grid.appendChild(btn);
+      const title = currentEpTitles[String(i)] || '';
+      const m = title.match(/^S(\d+)E\d+/i);
+      const s = m ? parseInt(m[1]) : 1;
+      epSeasonOf[i] = s;
+      if (!seasonMap[s]) seasonMap[s] = [];
+      seasonMap[s].push(i);
     }
+
+    const seasons = Object.keys(seasonMap).map(Number).sort((a, b) => a - b);
+    const multiSeason = seasons.length > 1;
+
+    seasons.forEach(s => {
+      if (multiSeason) {
+        const header = document.createElement('div');
+        header.className = 'ep-season-header';
+        header.textContent = s + '. Sezon';
+        grid.appendChild(header);
+      }
+      seasonMap[s].forEach(i => {
+        const btn = document.createElement('button');
+        const hasLink = !!currentEpLinks[String(i)];
+        btn.className = 'ep-btn' + (i === currentEp ? ' current' : '') + (hasLink ? ' has-link' : ' no-link');
+        btn.textContent = i;
+        btn.title = hasLink ? 'Bölüm ' + i + ' — İzle' : 'Bölüm ' + i + ' — Link yok';
+        btn.addEventListener('click', () => {
+          if (!hasLink) { showToast('⚠ Bu bölüm için henüz link eklenmemiş.'); return; }
+          loadEpisode(i);
+        });
+        grid.appendChild(btn);
+      });
+    });
   }
 
   let currentEpSubs = {};
