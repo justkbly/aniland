@@ -996,6 +996,16 @@ const routes = {
     });
   },
 
+  'DELETE /api/animes/clear': async (req, res, extra) => {
+    const session = getSession(getToken(req));
+    if (!session || session.role !== 'admin')
+      return json(res, 403, { error: 'Yetki yok.' });
+    return withAnimes(async () => {
+      await writeAnimes([]);
+      return json(res, 200, { ok: true });
+    });
+  },
+
   'PATCH /api/animes': async (req, res, extra) => {
     const session = getSession(getToken(req));
     if (!session || session.role !== 'admin')
@@ -1858,6 +1868,9 @@ const server = http.createServer(async (req, res) => {
 
   if (url.match(/^\/api\/users\/([^/]+)\/role$/) && req.method === 'PATCH')
     return routes['PATCH /api/users/role'](req, res, { username: url.split('/')[3] });
+
+  if (url === '/api/animes/clear' && req.method === 'DELETE')
+    return routes['DELETE /api/animes/clear'](req, res, {});
 
   if (url.match(/^\/api\/animes\/([^/]+)$/) && req.method === 'DELETE')
     return routes['DELETE /api/animes'](req, res, { id: url.split('/')[3] });

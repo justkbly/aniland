@@ -4030,7 +4030,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
         <label class="form-label">Şifre Tekrar</label>
         <input type="password" class="form-input" placeholder="••••••••">
       </div>
-      <button class="form-submit" id="btnRegister">🌸 Hesap Oluştur</button>
+      <button class="form-submit" id="btnRegister">Hesap Oluştur</button>
       <p class="form-note">Zaten hesabın var mı? <a href="#" id="switchToLogin">Giriş yap →</a></p>
     </div>
 
@@ -4038,7 +4038,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     <div class="success-screen" id="successScreen">
       <div class="success-icon">✓</div>
       <div class="success-title">Hoş Geldin!</div>
-      <p class="success-sub">AniLand'e başarıyla giriş yaptın.<br>Anime dünyasına hazır mısın? 🌸</p>
+      <p class="success-sub">AniLand'e başarıyla giriş yaptın.<br>Anime dünyasına hazır mısın?</p>
       <button class="form-submit" id="btnSuccessClose" style="margin-top:0.5rem;">Hadi Başlayalım →</button>
     </div>
   </div>
@@ -6302,7 +6302,7 @@ function openSearch(q) {
     <button class="pub-profile-back" id="pubProfileBack">←</button>
     <span id="pubProfileTopbarTitle" style="font-family:'Bebas Neue',cursive;font-size:1.2rem;letter-spacing:2px;flex:1;">Profil</span>
     <a href="#" class="logo" style="gap:0.4rem;">
-      <div class="logo-icon" style="width:28px;height:28px;font-size:0.9rem;">🌸</div>
+      <div class="logo-icon" style="width:28px;height:28px;font-size:0.9rem;"></div>
       <span class="logo-text" style="font-size:1.4rem;">AniLand</span>
     </a>
   </div>
@@ -6489,7 +6489,7 @@ function _buildPublicProfileHTML(p) {
   // Avatar: sunucudan gelen fotoğraf varsa onu kullan
   const avatarSrc   = p.photoDataUrl || avatarUrl(p.username, 200);
   // Bio: sunucudan gelen bio varsa onu kullan
-  const bioText     = p.bio || 'Anime tutkunu 🌸';
+  const bioText     = p.bio || 'Anime tutkunu ';
 
   // Badges
   const badges = [];
@@ -6988,7 +6988,7 @@ function _buildPublicProfileHTML(p) {
     <span style="font-family:'Bebas Neue',cursive;font-size:1.2rem;letter-spacing:2px;">Profilim</span>
     <div style="flex:1;"></div>
     <a href="#" class="logo" style="gap:0.4rem;">
-      <div class="logo-icon" style="width:28px;height:28px;font-size:0.9rem;">🌸</div>
+      <div class="logo-icon" style="width:28px;height:28px;font-size:0.9rem;"></div>
       <span class="logo-text" style="font-size:1.4rem;">AniLand</span>
     </a>
   </div>
@@ -7424,7 +7424,7 @@ function openProfile() {
 
   // Bio
   const bioEl = document.getElementById('profileBio');
-  bioEl.textContent = profile.bio || 'Anime tutkunu 🌸 | Henüz bio eklenmemiş.';
+  bioEl.textContent = profile.bio || 'Anime tutkunu  | Henüz biyografi eklenmemiş.';
 
   // Badges based on role / watched count
   const wl = getUserWatchlist(session.username);
@@ -7441,7 +7441,7 @@ function openProfile() {
   // Settings panel
   document.getElementById('settingsUsername').textContent = session.username;
   document.getElementById('settingsEmail').textContent = session.email || '—';
-  document.getElementById('settingsMembership').textContent = session.role === 'admin' ? '⚙️ Admin' : '🌸 Üye';
+  document.getElementById('settingsMembership').textContent = session.role === 'admin' ? '⚙️ Admin' : ' Üye';
   document.getElementById('settingsMembership').style.color = session.role === 'admin' ? 'var(--gold)' : 'var(--neon)';
   document.getElementById('settingsJoined').textContent = formatJoinDate(userRecord.joined || session.loginAt);
 
@@ -8341,6 +8341,7 @@ document.getElementById('pwChangeBtn').addEventListener('click', async function(
         🗄️ localStorage kullanımı: <span id="storageSize" style="color:var(--neon);font-weight:700;">—</span>
       </div>
       <div style="display:flex;gap:0.6rem;">
+        <button class="admin-btn-reset" style="font-size:0.82rem;padding:0.4rem 0.9rem;border-color:rgba(255,140,0,0.3);color:#ff8c00;" onclick="clearAllAnimes()">🗑 Tüm Animeleri Sil</button>
         <button class="admin-btn-reset" style="font-size:0.82rem;padding:0.4rem 0.9rem;border-color:rgba(255,56,96,0.3);color:var(--red);" onclick="clearAllData()">🗑 Tüm Verileri Sil</button>
       </div>
     </div>
@@ -8629,7 +8630,7 @@ document.getElementById('pwChangeBtn').addEventListener('click', async function(
   <div class="detail-topbar">
     <button class="detail-back" id="detailBack" aria-label="Geri">←</button>
     <div style="display:flex;align-items:center;gap:0.5rem;">
-      <div class="logo-icon" style="width:28px;height:28px;font-size:1rem;" aria-hidden="true">🌸</div>
+      <div class="logo-icon" style="width:28px;height:28px;font-size:1rem;" aria-hidden="true"></div>
       <span class="logo-text" style="font-size:1.4rem;">AniLand</span>
     </div>
   </div>
@@ -9380,6 +9381,21 @@ function processImportFile(file) {
     }
   };
   reader.readAsText(file);
+}
+
+async function clearAllAnimes() {
+  if (!confirm('⚠ TÜM ANİMELER SİLİNECEK.\nBu işlem geri alınamaz. Devam etmek istediğine emin misin?')) return;
+  try {
+    const res = await authFetch('/api/animes/clear', { method: 'DELETE' });
+    if (!res.ok) throw new Error();
+    await fetchAnimes();
+    renderAdminTable();
+    updateAdminStats();
+    renderHomePage();
+    showToast('🗑 Tüm animeler silindi.');
+  } catch {
+    showToast('❌ Animeler silinemedi.');
+  }
 }
 
 async function clearAllData() {
