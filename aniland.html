@@ -9103,7 +9103,7 @@ function processImportFile(file) {
       if (animeList) {
         status.innerHTML = '<span style="color:var(--muted);">⏳ ' + animeList.length + ' anime /api/animes/bulk ile yükleniyor...</span>';
         try {
-          const res = await authFetch('/api/animes/bulk', { method: 'POST', body: JSON.stringify(animeList) });
+          const res = await authFetch('/api/animes/bulk', { method: 'POST', body: JSON.stringify({ animes: animeList }) });
           const result = await res.json();
           animesImported = result.added || 0;
           await fetchAnimes();
