@@ -1,8 +1,85 @@
-const http   = require('http');
-const https  = require('https');
-const fs     = require('fs');
-const path   = require('path');
-const crypto = require('crypto');
+const http     = require('http');
+const https    = require('https');
+const fs       = require('fs');
+const path     = require('path');
+const crypto   = require('crypto');
+const mongoose = require('mongoose');
+
+const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://kblyben_db_user:S31fclGU8s5ViSZT@session.zhzbrfb.mongodb.net/AniLandDB?retryWrites=true&w=majority';
+
+async function connectDB() {
+  await mongoose.connect(MONGO_URI);
+  console.log('[AniLand] ✅ MongoDB bağlantısı kuruldu.');
+}
+
+// ─── Mongoose Şemaları & Modeller ─────────────────────────────────────────────
+const UserSchema = new mongoose.Schema({
+  username:     { type: String, required: true, unique: true },
+  email:        { type: String, required: true },
+  hash:         String,
+  salt:         String,
+  role:         { type: String, default: 'user' },
+  joined:       Number,
+  bio:          String,
+  photoDataUrl: String,
+}, { _id: false, versionKey: false });
+
+const AnimeSchema = new mongoose.Schema({
+  id:          { type: String, required: true, unique: true },
+  title:       String,
+  slug:        { type: String, unique: true },
+  emoji:       String,
+  genre:       String,
+  score:       String,
+  eps:         String,
+  year:        mongoose.Schema.Types.Mixed,
+  color1:      String,
+  color2:      String,
+  desc:        String,
+  epLinks:     mongoose.Schema.Types.Mixed,
+  epTitles:    mongoose.Schema.Types.Mixed,
+  epSubs:      mongoose.Schema.Types.Mixed,
+  coverImage:  String,
+  bannerImage: String,
+  altTitle:    String,
+  addedAt:     Number,
+  updatedAt:   Number,
+}, { _id: false, versionKey: false });
+
+const CommentStoreSchema = new mongoose.Schema({
+  key:      { type: String, required: true, unique: true },
+  comments: mongoose.Schema.Types.Mixed,
+}, { versionKey: false });
+
+const RatingStoreSchema = new mongoose.Schema({
+  slug:    { type: String, required: true, unique: true },
+  ratings: mongoose.Schema.Types.Mixed,
+}, { versionKey: false });
+
+const FollowStoreSchema = new mongoose.Schema({
+  username:  { type: String, required: true, unique: true },
+  following: [String],
+}, { versionKey: false });
+
+const NotificationStoreSchema = new mongoose.Schema({
+  username:      { type: String, required: true, unique: true },
+  notifications: mongoose.Schema.Types.Mixed,
+}, { versionKey: false });
+
+const SettingsSchema = new mongoose.Schema({
+  _id:           { type: String, default: 'settings' },
+  marqueeItems:  mongoose.Schema.Types.Mixed,
+  featuredAnime: mongoose.Schema.Types.Mixed,
+  homeSchedule:  mongoose.Schema.Types.Mixed,
+}, { versionKey: false });
+
+const UserModel         = mongoose.model('User',             UserSchema);
+const AnimeModel        = mongoose.model('Anime',            AnimeSchema);
+const CommentStore      = mongoose.model('CommentStore',     CommentStoreSchema);
+const RatingStore       = mongoose.model('RatingStore',      RatingStoreSchema);
+const FollowStore       = mongoose.model('FollowStore',      FollowStoreSchema);
+const NotificationStore = mongoose.model('NotificationStore',NotificationStoreSchema);
+const SettingsModel     = mongoose.model('Settings',         SettingsSchema);
 
 let WebSocketServer;
 try {
@@ -87,21 +164,19 @@ function verifyPassword(password, storedHash, salt) {
 }
 
 // ─── Kullanıcı verisi ─────────────────────────────────────────────────────────
-function readUsers() {
-  if (!fs.existsSync(USERS_FILE)) return [];
-  try { return JSON.parse(fs.readFileSync(USERS_FILE, 'utf8')); }
-  catch { return []; }
+async function readUsers() {
+  return UserModel.find({}).lean();
 }
 
-function writeUsers(users) {
-  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf8');
+async function writeUsers(users) {
+  await UserModel.deleteMany({});
+  if (users.length) await UserModel.insertMany(users, { ordered: false }).catch(() => {});
 }
 
-// Mutex korumalı kullanıcı güncelleme
 async function withUsers(fn) {
   await usersMutex.lock();
   try {
-    const users = readUsers();
+    const users = await readUsers();
     const result = await fn(users);
     return result;
   } finally {
@@ -110,20 +185,19 @@ async function withUsers(fn) {
 }
 
 // ─── Anime verisi ─────────────────────────────────────────────────────────────
-function readAnimes() {
-  if (!fs.existsSync(ANIMES_FILE)) return [];
-  try { return JSON.parse(fs.readFileSync(ANIMES_FILE, 'utf8')); }
-  catch { return []; }
+async function readAnimes() {
+  return AnimeModel.find({}).lean();
 }
 
-function writeAnimes(list) {
-  fs.writeFileSync(ANIMES_FILE, JSON.stringify(list, null, 2), 'utf8');
+async function writeAnimes(list) {
+  await AnimeModel.deleteMany({});
+  if (list.length) await AnimeModel.insertMany(list, { ordered: false }).catch(() => {});
 }
 
 async function withAnimes(fn) {
   await animesMutex.lock();
   try {
-    const list = readAnimes();
+    const list = await readAnimes();
     const result = await fn(list);
     return result;
   } finally {
@@ -131,23 +205,25 @@ async function withAnimes(fn) {
   }
 }
 
-// Tau video linklerini bir anime'nin epLinks'ine kaydet
-
 // ─── Yorum verisi ─────────────────────────────────────────────────────────────
-function readComments() {
-  if (!fs.existsSync(COMMENTS_FILE)) return {};
-  try { return JSON.parse(fs.readFileSync(COMMENTS_FILE, 'utf8')); }
-  catch { return {}; }
+async function readComments() {
+  const docs = await CommentStore.find({}).lean();
+  const result = {};
+  for (const d of docs) result[d.key] = d.comments;
+  return result;
 }
 
-function writeComments(data) {
-  fs.writeFileSync(COMMENTS_FILE, JSON.stringify(data, null, 2), 'utf8');
+async function writeComments(data) {
+  const ops = Object.entries(data).map(([key, comments]) => ({
+    updateOne: { filter: { key }, update: { $set: { comments } }, upsert: true }
+  }));
+  if (ops.length) await CommentStore.bulkWrite(ops);
 }
 
 async function withComments(fn) {
   await commentsMutex.lock();
   try {
-    const data = readComments();
+    const data = await readComments();
     const result = await fn(data);
     return result;
   } finally {
@@ -156,20 +232,24 @@ async function withComments(fn) {
 }
 
 // ─── Puan verisi ──────────────────────────────────────────────────────────────
-function readRatings() {
-  if (!fs.existsSync(RATINGS_FILE)) return {};
-  try { return JSON.parse(fs.readFileSync(RATINGS_FILE, 'utf8')); }
-  catch { return {}; }
+async function readRatings() {
+  const docs = await RatingStore.find({}).lean();
+  const result = {};
+  for (const d of docs) result[d.slug] = d.ratings || {};
+  return result;
 }
 
-function writeRatings(data) {
-  fs.writeFileSync(RATINGS_FILE, JSON.stringify(data, null, 2), 'utf8');
+async function writeRatings(data) {
+  const ops = Object.entries(data).map(([slug, ratings]) => ({
+    updateOne: { filter: { slug }, update: { $set: { ratings } }, upsert: true }
+  }));
+  if (ops.length) await RatingStore.bulkWrite(ops);
 }
 
 async function withRatings(fn) {
   await ratingsMutex.lock();
   try {
-    const data = readRatings();
+    const data = await readRatings();
     const result = await fn(data);
     return result;
   } finally {
@@ -178,20 +258,24 @@ async function withRatings(fn) {
 }
 
 // ─── Takipçi verisi ───────────────────────────────────────────────────────────
-function readFollows() {
-  if (!fs.existsSync(FOLLOWS_FILE)) return {};
-  try { return JSON.parse(fs.readFileSync(FOLLOWS_FILE, 'utf8')); }
-  catch { return {}; }
+async function readFollows() {
+  const docs = await FollowStore.find({}).lean();
+  const result = {};
+  for (const d of docs) result[d.username] = d.following || [];
+  return result;
 }
 
-function writeFollows(data) {
-  fs.writeFileSync(FOLLOWS_FILE, JSON.stringify(data, null, 2), 'utf8');
+async function writeFollows(data) {
+  const ops = Object.entries(data).map(([username, following]) => ({
+    updateOne: { filter: { username }, update: { $set: { following } }, upsert: true }
+  }));
+  if (ops.length) await FollowStore.bulkWrite(ops);
 }
 
 async function withFollows(fn) {
   await followsMutex.lock();
   try {
-    const data = readFollows();
+    const data = await readFollows();
     const result = await fn(data);
     return result;
   } finally {
@@ -210,20 +294,19 @@ const DEFAULT_SETTINGS = {
   ]
 };
 
-function readSettings() {
-  if (!fs.existsSync(SETTINGS_FILE)) return { ...DEFAULT_SETTINGS };
-  try { return { ...DEFAULT_SETTINGS, ...JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8')) }; }
-  catch { return { ...DEFAULT_SETTINGS }; }
+async function readSettings() {
+  const doc = await SettingsModel.findById('settings').lean();
+  return { ...DEFAULT_SETTINGS, ...(doc || {}) };
 }
 
-function writeSettings(data) {
-  fs.writeFileSync(SETTINGS_FILE, JSON.stringify(data, null, 2), 'utf8');
+async function writeSettings(data) {
+  await SettingsModel.findByIdAndUpdate('settings', { $set: data }, { upsert: true, new: true });
 }
 
 async function withSettings(fn) {
   await settingsMutex.lock();
   try {
-    const data = readSettings();
+    const data = await readSettings();
     const result = await fn(data);
     return result;
   } finally {
@@ -232,20 +315,24 @@ async function withSettings(fn) {
 }
 
 // ─── Bildirim verisi ──────────────────────────────────────────────────────────
-function readNotifications() {
-  if (!fs.existsSync(NOTIFICATIONS_FILE)) return {};
-  try { return JSON.parse(fs.readFileSync(NOTIFICATIONS_FILE, 'utf8')); }
-  catch { return {}; }
+async function readNotifications() {
+  const docs = await NotificationStore.find({}).lean();
+  const result = {};
+  for (const d of docs) result[d.username] = d.notifications || [];
+  return result;
 }
 
-function writeNotifications(data) {
-  fs.writeFileSync(NOTIFICATIONS_FILE, JSON.stringify(data, null, 2), 'utf8');
+async function writeNotifications(data) {
+  const ops = Object.entries(data).map(([username, notifications]) => ({
+    updateOne: { filter: { username }, update: { $set: { notifications } }, upsert: true }
+  }));
+  if (ops.length) await NotificationStore.bulkWrite(ops);
 }
 
 async function withNotifications(fn) {
   await notificationsMutex.lock();
   try {
-    const data = readNotifications();
+    const data = await readNotifications();
     const result = await fn(data);
     return result;
   } finally {
@@ -253,8 +340,8 @@ async function withNotifications(fn) {
   }
 }
 
-function ensureAdminExists() {
-  const users = readUsers();
+async function ensureAdminExists() {
+  const users = await readUsers();
   if (users.find(u => u.username === 'admin')) return;
   const { hash, salt } = hashPassword('admin123');
   users.push({
@@ -264,58 +351,24 @@ function ensureAdminExists() {
     role: 'admin',
     joined: Date.now()
   });
-  writeUsers(users);
+  await writeUsers(users);
   console.log('[AniLand] Admin kullanıcısı oluşturuldu. Kullanıcı: admin | Şifre: admin123');
 }
 
-// ─── Oturum yönetimi ──────────────────────────────────────────────────────────
-const SESSIONS_FILE = path.join(__dirname, 'sessions.json');
-const SESSION_TTL   = 30 * 24 * 60 * 60 * 1000; // 30 gün
+// ─── Oturum yönetimi (in-memory) ──────────────────────────────────────────────
+const SESSION_TTL = 30 * 24 * 60 * 60 * 1000; // 30 gün
 
 const sessions = new Map();
-
-function loadSessions() {
-  if (!fs.existsSync(SESSIONS_FILE)) return;
-  try {
-    const raw = JSON.parse(fs.readFileSync(SESSIONS_FILE, 'utf8'));
-    const now = Date.now();
-    for (const [token, data] of Object.entries(raw)) {
-      if (data.loginAt && (now - data.loginAt) < SESSION_TTL) {
-        sessions.set(token, data);
-      }
-    }
-    console.log(`[AniLand] ${sessions.size} oturum dosyadan yüklendi.`);
-  } catch {
-    console.warn('[AniLand] sessions.json okunamadı, sıfırdan başlanıyor.');
-  }
-}
-
-// Debounce: ardışık yazmaları grupla (en fazla her 2 saniyede bir yaz)
-let _saveSessionsTimer = null;
-function saveSessions() {
-  if (_saveSessionsTimer) return;
-  _saveSessionsTimer = setTimeout(() => {
-    _saveSessionsTimer = null;
-    try {
-      const obj = {};
-      for (const [token, data] of sessions) obj[token] = data;
-      fs.writeFileSync(SESSIONS_FILE, JSON.stringify(obj), 'utf8');
-    } catch (err) {
-      console.error('[AniLand] Oturumlar kaydedilemedi:', err.message);
-    }
-  }, 2000);
-}
 
 function createToken(userRecord) {
   const token = crypto.randomBytes(32).toString('hex');
   sessions.set(token, {
     username: userRecord.username,
-    email: userRecord.email,
-    role: userRecord.role,
-    joined: userRecord.joined,
-    loginAt: Date.now()
+    email:    userRecord.email,
+    role:     userRecord.role,
+    joined:   userRecord.joined,
+    loginAt:  Date.now()
   });
-  saveSessions();
   return token;
 }
 
@@ -325,7 +378,6 @@ function getSession(token) {
   if (!session) return null;
   if (Date.now() - session.loginAt > SESSION_TTL) {
     sessions.delete(token);
-    saveSessions();
     return null;
   }
   return session;
@@ -333,10 +385,7 @@ function getSession(token) {
 
 function destroySession(token) {
   sessions.delete(token);
-  saveSessions();
 }
-
-loadSessions();
 
 // ─── Brute-force koruması ─────────────────────────────────────────────────────
 // IP başına 5 hatalı denemeden sonra 15 dakika kilit.
@@ -638,7 +687,7 @@ const routes = {
       const { hash, salt } = hashPassword(password);
       const newUser = { username, email, hash, salt, role: 'user', joined: Date.now() };
       users.push(newUser);
-      writeUsers(users);
+      await writeUsers(users);
       const token = createToken(newUser);
       return json(res, 200, { token, user: { username, email, role: 'user', joined: newUser.joined } });
     });
@@ -658,7 +707,7 @@ const routes = {
     if (!usernameOrEmail || !password)
       return json(res, 400, { error: 'Kullanıcı adı ve şifre gerekli.' });
 
-    const users = readUsers();
+    const users = await readUsers();
     const user  = users.find(u =>
       u.username.toLowerCase() === usernameOrEmail.toLowerCase() ||
       u.email.toLowerCase()    === usernameOrEmail.toLowerCase()
@@ -697,7 +746,7 @@ const routes = {
   'GET /api/me': async (req, res) => {
     const session = getSession(getToken(req));
     if (!session) return json(res, 401, { error: 'Oturum açık değil.' });
-    const users = readUsers();
+    const users = await readUsers();
     const user  = users.find(u => u.username === session.username);
     if (!user) return json(res, 401, { error: 'Kullanıcı bulunamadı.' });
     return json(res, 200, {
@@ -715,7 +764,7 @@ const routes = {
     const session = getSession(getToken(req));
     if (!session || session.role !== 'admin')
       return json(res, 403, { error: 'Yetki yok.' });
-    const users = readUsers().map(({ hash, salt, ...safe }) => safe);
+    const users = (await readUsers()).map(({ hash, salt, ...safe }) => safe);
     return json(res, 200, { users });
   },
 
@@ -731,11 +780,10 @@ const routes = {
       const before = users.length;
       const newList = users.filter(u => u.username !== target);
       if (newList.length === before) return json(res, 404, { error: 'Kullanıcı bulunamadı.' });
-      writeUsers(newList);
+      await writeUsers(newList);
       for (const [token, data] of sessions) {
         if (data.username === target) sessions.delete(token);
       }
-      saveSessions();
       return json(res, 200, { ok: true });
     });
   },
@@ -757,7 +805,7 @@ const routes = {
       const user = users.find(u => u.username === extra.username);
       if (!user) return json(res, 404, { error: 'Kullanıcı bulunamadı.' });
       user.role = role;
-      writeUsers(users);
+      await writeUsers(users);
       return json(res, 200, { ok: true });
     });
   },
@@ -771,7 +819,7 @@ const routes = {
 
     return withUsers(async (users) => {
       const newList = users.filter(u => u.username !== session.username);
-      writeUsers(newList);
+      await writeUsers(newList);
       destroySession(token);
       return json(res, 200, { ok: true });
     });
@@ -799,7 +847,7 @@ const routes = {
       const { hash, salt } = hashPassword(newPassword);
       user.hash = hash;
       user.salt = salt;
-      writeUsers(users);
+      await writeUsers(users);
       return json(res, 200, { ok: true });
     });
   },
@@ -807,12 +855,12 @@ const routes = {
   // ── Anime API ────────────────────────────────────────────────────────────
 
   'GET /api/animes': async (req, res) => {
-    return json(res, 200, { animes: readAnimes() });
+    return json(res, 200, { animes: await readAnimes() });
   },
 
   // ── Site Ayarları ────────────────────────────────────────────────────────
   'GET /api/settings': async (_req, res) => {
-    return json(res, 200, readSettings());
+    return json(res, 200, await readSettings());
   },
 
   'PATCH /api/settings': async (req, res) => {
@@ -829,16 +877,16 @@ const routes = {
       if (body.featuredAnime && typeof body.featuredAnime === 'object')
         settings.featuredAnime = { ...settings.featuredAnime, ...body.featuredAnime };
       if (Array.isArray(body.homeSchedule)) settings.homeSchedule = body.homeSchedule;
-      writeSettings(settings);
+      await writeSettings(settings);
       return json(res, 200, { ok: true, settings });
     });
   },
 
   // Herkese açık sıralama endpoint'i — kullanıcı puanları + yorum sayısına göre
   'GET /api/animes/ranked': async (_req, res) => {
-    const animes   = readAnimes();
-    const ratings  = readRatings();
-    const comments = readComments();
+    const animes   = await readAnimes();
+    const ratings  = await readRatings();
+    const comments = await readComments();
 
     // Yorum sayısı haritası
     const commentCounts = {};
@@ -924,7 +972,7 @@ const routes = {
         addedAt: Date.now()
       };
       list.unshift(anime);
-      writeAnimes(list);
+      await writeAnimes(list);
       console.log(`[POST /api/animes] eklendi — "${anime.title}" (slug: ${anime.slug}, epLink sayısı: ${Object.keys(anime.epLinks).length})`);
       return json(res, 200, { anime });
     });
@@ -941,7 +989,7 @@ const routes = {
       const before = list.length;
       const newList = list.filter(a => a.id !== id);
       if (newList.length === before) return json(res, 404, { error: 'Anime bulunamadı.' });
-      writeAnimes(newList);
+      await writeAnimes(newList);
       return json(res, 200, { ok: true });
     });
   },
@@ -992,7 +1040,7 @@ const routes = {
       if (body.altTitle    !== undefined) anime.altTitle    = body.altTitle;
       anime.updatedAt = Date.now();
       list[idx] = anime;
-      writeAnimes(list);
+      await writeAnimes(list);
       console.log(`[PATCH /api/animes] güncellendi — "${anime.title}" (id: ${id}, epLink sayısı: ${Object.keys(anime.epLinks||{}).length})`);
       return json(res, 200, { anime });
     });
@@ -1043,7 +1091,7 @@ const routes = {
         added++;
         results.push({ title: a.title, status: 'added', slug });
       }
-      writeAnimes(list);
+      await writeAnimes(list);
       return json(res, 200, { added, skipped, results });
     });
   },
@@ -1053,10 +1101,10 @@ const routes = {
     if (!session || session.role !== 'admin')
       return json(res, 403, { error: 'Yetki yok.' });
 
-    const animes   = readAnimes();
-    const users    = readUsers();
-    const comments = readComments();
-    const ratings  = readRatings();
+    const animes   = await readAnimes();
+    const users    = await readUsers();
+    const comments = await readComments();
+    const ratings  = await readRatings();
 
     // Tür dağılımı
     const genreDist = {};
@@ -1123,7 +1171,7 @@ const routes = {
   'GET /api/comments': async (req, res, extra) => {
     const { slug, ep } = extra;
     if (!slug || !ep) return json(res, 400, { error: 'slug ve ep gerekli.' });
-    const data = readComments();
+    const data = await readComments();
     const key  = slug + ':' + ep;
     return json(res, 200, { comments: data[key] || [] });
   },
@@ -1168,7 +1216,7 @@ const routes = {
         avatarEmoji: emojis[seed % emojis.length],
       };
       data[key].push(comment);
-      writeComments(data);
+      await writeComments(data);
       return json(res, 200, { comment });
     });
   },
@@ -1190,7 +1238,7 @@ const routes = {
         return json(res, 403, { error: 'Yetki yok.' });
       list.splice(idx, 1);
       data[key] = list;
-      writeComments(data);
+      await writeComments(data);
       return json(res, 200, { ok: true });
     });
   },
@@ -1218,7 +1266,7 @@ const routes = {
         c.likes = (c.likes || 0) + 1;
       }
       data[key] = list;
-      writeComments(data);
+      await writeComments(data);
       return json(res, 200, { likes: c.likes, liked: !already });
     });
   },
@@ -1269,7 +1317,7 @@ const routes = {
       };
       comment.replies.push(reply);
       data[key] = list;
-      writeComments(data);
+      await writeComments(data);
       return json(res, 200, { reply });
     });
   },
@@ -1298,7 +1346,7 @@ const routes = {
       
       comment.replies.splice(replyIdx, 1);
       data[key] = list;
-      writeComments(data);
+      await writeComments(data);
       return json(res, 200, { ok: true });
     });
   },
@@ -1332,7 +1380,7 @@ const routes = {
         c.dislikes++;
       }
       data[key] = list;
-      writeComments(data);
+      await writeComments(data);
       return json(res, 200, { dislikes: c.dislikes, disliked: !already, likes: c.likes || 0 });
     });
   },
@@ -1365,7 +1413,7 @@ const routes = {
         reply.likes = (reply.likes || 0) + 1;
       }
       data[key] = list;
-      writeComments(data);
+      await writeComments(data);
       return json(res, 200, { likes: reply.likes, liked: !already });
     });
   },
@@ -1401,7 +1449,7 @@ const routes = {
         reply.dislikes++;
       }
       data[key] = list;
-      writeComments(data);
+      await writeComments(data);
       return json(res, 200, { dislikes: reply.dislikes, disliked: !already, likes: reply.likes || 0 });
     });
   },
@@ -1412,7 +1460,7 @@ const routes = {
   'GET /api/ratings': async (req, res, extra) => {
     const { slug } = extra;
     if (!slug) return json(res, 400, { error: 'slug gerekli.' });
-    const data    = readRatings();
+    const data    = await readRatings();
     const ratings = data[slug] || {};
     const values  = Object.values(ratings);
     const avg     = values.length ? (values.reduce((a,b) => a+b, 0) / values.length) : 0;
@@ -1441,7 +1489,7 @@ const routes = {
     return withRatings(async (data) => {
       if (!data[slug]) data[slug] = {};
       data[slug][session.username] = score;
-      writeRatings(data);
+      await writeRatings(data);
       const values = Object.values(data[slug]);
       const avg    = values.reduce((a,b) => a+b, 0) / values.length;
       return json(res, 200, { avg: Math.round(avg * 10) / 10, count: values.length, myRating: score });
@@ -1452,7 +1500,7 @@ const routes = {
   'GET /api/users/search': async (req, res, extra) => {
     const q = (extra.q || '').trim().toLowerCase();
     if (!q || q.length < 2) return json(res, 400, { error: 'En az 2 karakter girin.' });
-    const users = readUsers();
+    const users = await readUsers();
     const results = users
       .filter(u => u.username.toLowerCase().includes(q))
       .slice(0, 10)
@@ -1468,26 +1516,26 @@ const routes = {
   'GET /api/profile': async (req, res, extra) => {
     const { username } = extra;
     if (!username) return json(res, 400, { error: 'username gerekli.' });
-    const users = readUsers();
+    const users = await readUsers();
     const user  = users.find(u => u.username.toLowerCase() === username.toLowerCase());
     if (!user) return json(res, 404, { error: 'Kullanıcı bulunamadı.' });
 
     // Yorumları say
-    const allComments = readComments();
+    const allComments = await readComments();
     let commentCount = 0;
     for (const list of Object.values(allComments)) {
       commentCount += list.filter(c => c.username === user.username).length;
     }
 
     // Puanları say
-    const allRatings = readRatings();
+    const allRatings = await readRatings();
     let ratingCount = 0;
     for (const ratingMap of Object.values(allRatings)) {
       if (ratingMap[user.username]) ratingCount++;
     }
 
     // Takipçileri say
-    const follows = readFollows();
+    const follows = await readFollows();
     let followerCount = 0;
     let followingCount = 0;
     for (const followers of Object.values(follows)) {
@@ -1534,7 +1582,7 @@ const routes = {
           users[idx].photoDataUrl = photoDataUrl;
         }
       }
-      writeUsers(users);
+      await writeUsers(users);
       return json(res, 200, { ok: true });
     });
   },
@@ -1549,7 +1597,7 @@ const routes = {
     if (username.toLowerCase() === session.username.toLowerCase())
       return json(res, 400, { error: 'Kendini takip edemezsin.' });
 
-    const users = readUsers();
+    const users = await readUsers();
     if (!users.find(u => u.username.toLowerCase() === username.toLowerCase()))
       return json(res, 404, { error: 'Kullanıcı bulunamadı.' });
 
@@ -1559,7 +1607,7 @@ const routes = {
         return json(res, 400, { error: 'Zaten takip ediyorsun.' });
 
       follows[session.username].push(username);
-      writeFollows(follows);
+      await writeFollows(follows);
 
       // Bildirim gönder
       return withNotifications(async (notif) => {
@@ -1572,7 +1620,7 @@ const routes = {
           ts: Date.now(),
           read: false,
         });
-        writeNotifications(notif);
+        await writeNotifications(notif);
         return json(res, 200, { ok: true });
       });
     });
@@ -1590,7 +1638,7 @@ const routes = {
         return json(res, 400, { error: 'Zaten takip etmiyorsun.' });
 
       follows[session.username] = follows[session.username].filter(u => u !== username);
-      writeFollows(follows);
+      await writeFollows(follows);
       return json(res, 200, { ok: true });
     });
   },
@@ -1599,11 +1647,11 @@ const routes = {
     const { username } = extra;
     if (!username) return json(res, 400, { error: 'username gerekli.' });
 
-    const users = readUsers();
+    const users = await readUsers();
     if (!users.find(u => u.username.toLowerCase() === username.toLowerCase()))
       return json(res, 404, { error: 'Kullanıcı bulunamadı.' });
 
-    const follows = readFollows();
+    const follows = await readFollows();
     const followers = [];
     for (const [follower, following] of Object.entries(follows)) {
       if (following.includes(username)) {
@@ -1624,11 +1672,11 @@ const routes = {
     const { username } = extra;
     if (!username) return json(res, 400, { error: 'username gerekli.' });
 
-    const users = readUsers();
+    const users = await readUsers();
     if (!users.find(u => u.username.toLowerCase() === username.toLowerCase()))
       return json(res, 404, { error: 'Kullanıcı bulunamadı.' });
 
-    const follows = readFollows();
+    const follows = await readFollows();
     const followingList = (follows[username] || []).map(uname => {
       const user = users.find(u => u.username === uname);
       return user ? { username: user.username, role: user.role, joined: user.joined } : null;
@@ -1640,8 +1688,8 @@ const routes = {
   'GET /api/user/comments': async (_req, res, extra) => {
     const { username } = extra;
     if (!username) return json(res, 400, { error: 'username gerekli.' });
-    const data = readComments();
-    const animes = readAnimes();
+    const data = await readComments();
+    const animes = await readAnimes();
     const results = [];
     for (const [key, comments] of Object.entries(data)) {
       const [slug, ep] = key.split('::');
@@ -1666,7 +1714,7 @@ const routes = {
     const session = getSession(getToken(req));
     if (!session) return json(res, 401, { error: 'Giriş gerekli.' });
 
-    const notif = readNotifications();
+    const notif = await readNotifications();
     const userNotif = notif[session.username] || [];
     const unreadCount = userNotif.filter(n => !n.read).length;
     return json(res, 200, { notifications: userNotif, unreadCount });
@@ -1685,7 +1733,7 @@ const routes = {
       if (idx === -1) return json(res, 404, { error: 'Bildirim bulunamadı.' });
       userNotif[idx].read = true;
       notif[session.username] = userNotif;
-      writeNotifications(notif);
+      await writeNotifications(notif);
       return json(res, 200, { ok: true });
     });
   },
@@ -1703,7 +1751,7 @@ const routes = {
       if (idx === -1) return json(res, 404, { error: 'Bildirim bulunamadı.' });
       userNotif.splice(idx, 1);
       notif[session.username] = userNotif;
-      writeNotifications(notif);
+      await writeNotifications(notif);
       return json(res, 200, { ok: true });
     });
   },
@@ -1718,7 +1766,6 @@ const routes = {
 };
 
 // ─── Ana HTTP sunucusu ────────────────────────────────────────────────────────
-ensureAdminExists();
 
 const server = http.createServer(async (req, res) => {
 
@@ -2015,7 +2062,16 @@ if (WebSocketServer) {
 }
 
 // ─── Başlat ───────────────────────────────────────────────────────────────────
-server.listen(PORT, "0.0.0.0", () => {
-  console.log(`\n✅ AniLand backend çalışıyor → Port: ${PORT}`);
-  console.log(`🌐 CORS origin: ${ALLOWED_ORIGIN}\n`);
+async function startServer() {
+  await connectDB();
+  await ensureAdminExists();
+  server.listen(PORT, "0.0.0.0", () => {
+    console.log(`\n✅ AniLand backend çalışıyor → Port: ${PORT}`);
+    console.log(`🌐 CORS origin: ${ALLOWED_ORIGIN}\n`);
+  });
+}
+
+startServer().catch(err => {
+  console.error('[AniLand] Başlatma hatası:', err);
+  process.exit(1);
 });
