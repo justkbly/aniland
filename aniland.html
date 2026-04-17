@@ -4364,28 +4364,53 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
       document.getElementById('playerEmoji').textContent = animeData.emoji || '🎬';
     }
 
-    // Çevirmen seçici
-    const subBar = document.getElementById('subSelector');
+    // Çevirmen seçici (player altı + bölüm listesi üstü)
+    const subBar    = document.getElementById('subSelector');
+    const epSubBar  = document.getElementById('epSubSelector');
     const subs = currentEpSubs[String(epNum)] || {};
     const subNames = Object.keys(subs);
+
+    function applySubSwitch(url, activeBar) {
+      const vid = document.getElementById('html5VideoPlayer');
+      if (vid) { vid.src = url; vid.play(); }
+      else if (iframe) { iframe.src = url; }
+      [subBar, epSubBar].forEach(bar => {
+        bar.querySelectorAll('.sub-btn').forEach(b => b.classList.toggle('active', b.dataset.url === url));
+      });
+    }
+
+    function buildSubBtns(bar) {
+      const existing = bar === epSubBar
+        ? bar.querySelectorAll('.sub-btn')
+        : null;
+      // epSubBar'daki etiket span'ı koru, sadece butonları yenile
+      bar.querySelectorAll('.sub-btn').forEach(b => b.remove());
+      subNames.forEach(name => {
+        const btn = document.createElement('button');
+        btn.className = 'sub-btn' + (subs[name] === embedUrl ? ' active' : '');
+        btn.dataset.url = subs[name];
+        btn.dataset.name = name;
+        btn.textContent = name;
+        btn.addEventListener('click', () => applySubSwitch(btn.dataset.url));
+        bar.appendChild(btn);
+      });
+    }
+
     if (subNames.length > 1) {
       subBar.style.display = 'flex';
       subBar.innerHTML = subNames.map(name =>
         `<button class="sub-btn${subs[name] === embedUrl ? ' active' : ''}" data-url="${escHtml(subs[name])}" data-name="${escHtml(name)}">${escHtml(name)}</button>`
       ).join('');
       subBar.querySelectorAll('.sub-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const url = btn.dataset.url;
-          const vid = document.getElementById('html5VideoPlayer');
-          if (vid) { vid.src = url; vid.play(); }
-          else if (iframe) { iframe.src = url; }
-          subBar.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-        });
+        btn.addEventListener('click', () => applySubSwitch(btn.dataset.url));
       });
+      epSubBar.style.display = 'flex';
+      buildSubBtns(epSubBar);
     } else {
       subBar.style.display = 'none';
       subBar.innerHTML = '';
+      epSubBar.style.display = 'none';
+      epSubBar.querySelectorAll('.sub-btn').forEach(b => b.remove());
     }
 
     buildEpGrid();
