@@ -61,7 +61,7 @@
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  html { scroll-behavior: smooth; }
+  html { scroll-behavior: auto; }
 
   body {
     background: var(--bg);
@@ -142,7 +142,7 @@
   }
 
   .logo-img {
-    height: 38px;
+    height: 54px;
     width: auto;
     object-fit: contain;
     display: block;
@@ -10872,38 +10872,44 @@ console.log('[AniLand] Watch Together v2 yuklendi');
 <script>
 // ── Smooth Scroll (lerp) ──────────────────────────────────────────────────
 (function() {
-  // Mobil veya oynatıcı açıkken devreye girme
-  const isMobile = () => window.innerWidth <= 768;
-  const isPlayerOpen = () => document.getElementById('playerPage')?.classList.contains('open');
+  const isMobile    = () => window.innerWidth <= 768;
+  const isPlayerOpen = () => !!document.getElementById('playerPage')?.classList.contains('open');
 
-  let current = window.scrollY;
-  let target  = window.scrollY;
-  let running = false;
-  const ease  = 0.10; // 0.06 = daha yavaş/yumuşak, 0.14 = daha hızlı
+  let current = 0;
+  let target  = 0;
+  let raf     = null;
+  const EASE  = 0.11;
+
+  function init() { current = target = window.scrollY; }
 
   function tick() {
     const diff = target - current;
-    if (Math.abs(diff) < 0.5) {
+    if (Math.abs(diff) < 0.8) {
       current = target;
-      running = false;
+      window.scrollTo(0, current);
+      raf = null;
       return;
     }
-    current += diff * ease;
+    current += diff * EASE;
     window.scrollTo(0, current);
-    requestAnimationFrame(tick);
+    raf = requestAnimationFrame(tick);
   }
 
   window.addEventListener('wheel', e => {
     if (isMobile() || isPlayerOpen()) return;
     e.preventDefault();
-    target = Math.max(0, Math.min(target + e.deltaY * 1.2, document.body.scrollHeight - window.innerHeight));
-    if (!running) { running = true; requestAnimationFrame(tick); }
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    target = Math.max(0, Math.min(target + e.deltaY * 1.4, max));
+    if (!raf) { raf = requestAnimationFrame(tick); }
   }, { passive: false });
 
-  // Sayfa dışında scroll edilince (klavye, scrollbar) senkronize et
+  // Klavye / scrollbar ile scroll edilince senkronize et
   window.addEventListener('scroll', () => {
-    if (!running) { current = window.scrollY; target = window.scrollY; }
+    if (!raf) { current = target = window.scrollY; }
   }, { passive: true });
+
+  window.addEventListener('load', init);
+  init();
 })();
 </script>
 </body>
