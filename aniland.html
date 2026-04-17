@@ -3712,6 +3712,11 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
         </div>
       </div>
 
+      <!-- SUB SELECTOR (bölüm listesi üstü) -->
+      <div id="epSubSelector" style="display:none;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.8rem;">
+        <span style="font-size:0.75rem;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;white-space:nowrap;">Çeviri:</span>
+      </div>
+
       <!-- EPISODES -->
       <div class="ep-section">
         <div class="ep-section-title">📋 Bölümler</div>
@@ -4370,7 +4375,10 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
       ).join('');
       subBar.querySelectorAll('.sub-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-          iframe.src = btn.dataset.url;
+          const url = btn.dataset.url;
+          const vid = document.getElementById('html5VideoPlayer');
+          if (vid) { vid.src = url; vid.play(); }
+          else if (iframe) { iframe.src = url; }
           subBar.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
         });

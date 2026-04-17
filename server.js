@@ -1065,8 +1065,8 @@ const routes = {
       return json(res, 400, { error: 'Tek seferde en fazla 500 anime içe aktarılabilir.' });
 
     return withAnimes(async (list) => {
-      const existingSlugs = new Set(list.map(a => a.slug));
-      let added = 0, skipped = 0;
+      const slugIndex = new Map(list.map((a, i) => [a.slug, i]));
+      let added = 0, updated = 0, skipped = 0;
       const results = [];
       for (const a of animes) {
         if (!a.title || !a.genre) { skipped++; results.push({ title: a.title || '?', status: 'skipped', reason: 'title/genre eksik' }); continue; }
@@ -1074,34 +1074,61 @@ const routes = {
           .replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ş/g,'s')
           .replace(/ı/g,'i').replace(/ö/g,'o').replace(/ç/g,'c')
           .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')) || 'anime-' + Date.now();
-        if (existingSlugs.has(slug)) { skipped++; results.push({ title: a.title, status: 'skipped', reason: 'slug zaten mevcut' }); continue; }
-        const anime = {
-          id: Date.now().toString() + Math.random().toString(36).slice(2, 6),
-          title: a.title, slug,
-          emoji:       a.emoji       || '🎬',
-          genre:       a.genre,
-          score:       a.score       || '',
-          eps:         a.eps         || '1',
-          year:        a.year        || new Date().getFullYear(),
-          color1:      a.color1      || '#1a0a2e',
-          color2:      a.color2      || '#2e0a1a',
-          desc:        a.desc        || '',
-          epLinks:     a.epLinks     || {},
-          epTitles:    a.epTitles    || {},
-          epSubs:      a.epSubs      || {},
-          epMeta:      a.epMeta      || {},
-          coverImage:  a.coverImage  || '',
-          bannerImage: a.bannerImage || '',
-          altTitle:    a.altTitle    || '',
-          addedAt: Date.now()
-        };
-        list.unshift(anime);
-        existingSlugs.add(slug);
-        added++;
-        results.push({ title: a.title, status: 'added', slug });
+        if (slugIndex.has(slug)) {
+          // Güncelle — mevcut id ve addedAt korunsun
+          const idx = slugIndex.get(slug);
+          const existing = list[idx];
+          list[idx] = {
+            ...existing, slug,
+            title:       a.title,
+            emoji:       a.emoji       || existing.emoji,
+            genre:       a.genre,
+            score:       a.score       || existing.score,
+            eps:         a.eps         || existing.eps,
+            year:        a.year        || existing.year,
+            color1:      a.color1      || existing.color1,
+            color2:      a.color2      || existing.color2,
+            desc:        a.desc        || existing.desc,
+            epLinks:     a.epLinks     || existing.epLinks,
+            epTitles:    a.epTitles    || existing.epTitles,
+            epSubs:      a.epSubs      || existing.epSubs,
+            epMeta:      a.epMeta      || existing.epMeta,
+            coverImage:  a.coverImage  || existing.coverImage,
+            bannerImage: a.bannerImage || existing.bannerImage,
+            altTitle:    a.altTitle    || existing.altTitle,
+            updatedAt:   Date.now(),
+          };
+          updated++;
+          results.push({ title: a.title, status: 'updated', slug });
+        } else {
+          const anime = {
+            id: Date.now().toString() + Math.random().toString(36).slice(2, 6),
+            title: a.title, slug,
+            emoji:       a.emoji       || '🎬',
+            genre:       a.genre,
+            score:       a.score       || '',
+            eps:         a.eps         || '1',
+            year:        a.year        || new Date().getFullYear(),
+            color1:      a.color1      || '#1a0a2e',
+            color2:      a.color2      || '#2e0a1a',
+            desc:        a.desc        || '',
+            epLinks:     a.epLinks     || {},
+            epTitles:    a.epTitles    || {},
+            epSubs:      a.epSubs      || {},
+            epMeta:      a.epMeta      || {},
+            coverImage:  a.coverImage  || '',
+            bannerImage: a.bannerImage || '',
+            altTitle:    a.altTitle    || '',
+            addedAt:     Date.now(),
+          };
+          list.unshift(anime);
+          slugIndex.set(slug, 0);
+          added++;
+          results.push({ title: a.title, status: 'added', slug });
+        }
       }
       await writeAnimes(list);
-      return json(res, 200, { added, skipped, results });
+      return json(res, 200, { added, updated, skipped, results });
     });
   },
 
