@@ -3752,67 +3752,10 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
       </div>
     </div>
 
-    <!-- RIGHT: sidebar -->
+    <!-- RIGHT: sidebar bölüm listesi -->
     <div class="player-sidebar">
-      <div class="sidebar-header">Sıradaki Animeler</div>
-      <div class="sidebar-scroll">
-        <div class="sidebar-card active">
-          <div class="sidebar-thumb" style="background:linear-gradient(135deg,#1a0a2e,#2e0a1a);">🗡️</div>
-          <div class="sidebar-info">
-            <div class="sidebar-title">Demon Slayer</div>
-            <div class="sidebar-ep">S4 · Bölüm 8 · İzleniyor</div>
-            <div class="sidebar-score">★ 9.1</div>
-          </div>
-        </div>
-        <div class="sidebar-card" onclick="openPlayer('Jujutsu Kaisen','S2 · Bölüm 23','⚡','#0a1a2e,#0a0a2e')">
-          <div class="sidebar-thumb" style="background:linear-gradient(135deg,#0a1a2e,#0a0a2e);">⚡</div>
-          <div class="sidebar-info">
-            <div class="sidebar-title">Jujutsu Kaisen</div>
-            <div class="sidebar-ep">S2 · Bölüm 23</div>
-            <div class="sidebar-score">★ 9.0</div>
-          </div>
-        </div>
-        <div class="sidebar-card" onclick="openPlayer('Blue Lock','S2 · Bölüm 12','⚽','#0a2e1a,#0a1a2e')">
-          <div class="sidebar-thumb" style="background:linear-gradient(135deg,#0a2e1a,#0a1a2e);">⚽</div>
-          <div class="sidebar-info">
-            <div class="sidebar-title">Blue Lock</div>
-            <div class="sidebar-ep">S2 · Bölüm 12</div>
-            <div class="sidebar-score">★ 8.8</div>
-          </div>
-        </div>
-        <div class="sidebar-card" onclick="openPlayer('Attack on Titan','Final · Bölüm 30','🏔️','#2e1a0a,#1a0a0a')">
-          <div class="sidebar-thumb" style="background:linear-gradient(135deg,#2e1a0a,#1a0a0a);">🏔️</div>
-          <div class="sidebar-info">
-            <div class="sidebar-title">Attack on Titan</div>
-            <div class="sidebar-ep">Final · Bölüm 30</div>
-            <div class="sidebar-score">★ 9.2</div>
-          </div>
-        </div>
-        <div class="sidebar-card" onclick="openPlayer('One Piece','Bölüm 1112','🌊','#0a0a2e,#2e0a2e')">
-          <div class="sidebar-thumb" style="background:linear-gradient(135deg,#0a0a2e,#2e0a2e);">🌊</div>
-          <div class="sidebar-info">
-            <div class="sidebar-title">One Piece</div>
-            <div class="sidebar-ep">Bölüm 1112</div>
-            <div class="sidebar-score">★ 9.3</div>
-          </div>
-        </div>
-        <div class="sidebar-card" onclick="openPlayer('Chainsaw Man','S1 · Bölüm 12','🔗','#2e0a0a,#0a2e2e')">
-          <div class="sidebar-thumb" style="background:linear-gradient(135deg,#2e0a0a,#0a2e2e);">🔗</div>
-          <div class="sidebar-info">
-            <div class="sidebar-title">Chainsaw Man</div>
-            <div class="sidebar-ep">S1 · Bölüm 12</div>
-            <div class="sidebar-score">★ 8.9</div>
-          </div>
-        </div>
-        <div class="sidebar-card" onclick="openPlayer('Solo Leveling','S1 · Bölüm 13','🎮','#2e2e0a,#1a0a2e')">
-          <div class="sidebar-thumb" style="background:linear-gradient(135deg,#2e2e0a,#1a0a2e);">🎮</div>
-          <div class="sidebar-info">
-            <div class="sidebar-title">Solo Leveling</div>
-            <div class="sidebar-ep">S1 · Bölüm 13</div>
-            <div class="sidebar-score">★ 8.7</div>
-          </div>
-        </div>
-      </div>
+      <div class="sidebar-header">Bölümler</div>
+      <div class="sidebar-scroll" id="sidebarEpScroll"></div>
     </div>
   </div>
 </div>
@@ -4368,7 +4311,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     const subBar    = document.getElementById('subSelector');
     const epSubBar  = document.getElementById('epSubSelector');
     const subs = currentEpSubs[String(epNum)] || {};
-    const subNames = Object.keys(subs);
+    const subNames = Object.keys(subs).filter(k => !/^\d+p$/i.test(k));
 
     function applySubSwitch(url, activeBar) {
       const vid = document.getElementById('html5VideoPlayer');
@@ -4414,6 +4357,30 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     }
 
     buildEpGrid();
+    // Sidebar bölüm listesini güncelle
+    const sidebarScroll = document.getElementById('sidebarEpScroll');
+    if (sidebarScroll) {
+      sidebarScroll.innerHTML = '';
+      const total = animeData.totalEps || 0;
+      for (let i = 1; i <= total; i++) {
+        const hasLink = !!currentEpLinks[String(i)];
+        const card = document.createElement('div');
+        card.className = 'sidebar-card' + (i === epNum ? ' active' : '') + (hasLink ? '' : ' no-link');
+        card.style.opacity = hasLink ? '1' : '0.4';
+        card.style.cursor = hasLink ? 'pointer' : 'default';
+        const titleStr = currentEpTitles[String(i)] || '';
+        const epMatch = titleStr.match(/^S\d+E(\d+)/i);
+        const dispNum = epMatch ? parseInt(epMatch[1]) : i;
+        const seasonMatch = titleStr.match(/^S(\d+)/i);
+        const seasonLabel = seasonMatch ? 'S' + seasonMatch[1] + ' · ' : '';
+        card.innerHTML = `<div class="sidebar-thumb" style="background:linear-gradient(135deg,var(--surface),rgba(99,102,241,0.15));font-size:1rem;display:flex;align-items:center;justify-content:center;color:var(--muted);font-weight:700;">${dispNum}</div><div class="sidebar-info"><div class="sidebar-title" style="font-size:0.82rem;">${seasonLabel}Bölüm ${dispNum}</div>${titleStr ? '<div class="sidebar-ep">' + escHtml(titleStr.replace(/^S\d+E\d+\s*[-–]?\s*/i,'')) + '</div>' : ''}</div>`;
+        if (hasLink) card.addEventListener('click', () => loadEpisode(i));
+        sidebarScroll.appendChild(card);
+      }
+      // Aktif bölümü görünür yap
+      const activeCard = sidebarScroll.querySelector('.sidebar-card.active');
+      if (activeCard) activeCard.scrollIntoView({ block: 'nearest' });
+    }
     // Yorumları bu bölüm için yükle
     if (animeData.slug) initComments(animeData.slug, epNum);
     // Puanları yükle
@@ -4488,10 +4455,9 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     if (_chipsEl && slug) {
       const _a = getAnimes().find(x => x.slug === slug);
       if (_a) {
-        const _score = _a.score ? '⭐ ' + _a.score : '';
         const _year  = _a.year  ? '📅 ' + _a.year  : '';
         const _genre = _a.genre ? '🎬 ' + _a.genre  : '';
-        _chipsEl.innerHTML = [_score, _year, _genre].filter(Boolean).map(c => `<span class="meta-chip">${c}</span>`).join('');
+        _chipsEl.innerHTML = [_year, _genre].filter(Boolean).map(c => `<span class="meta-chip">${c}</span>`).join('');
       }
     }
     document.querySelectorAll('.sidebar-card').forEach(c => c.classList.remove('active'));
