@@ -4601,6 +4601,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     document.querySelectorAll('.sidebar-card').forEach(c => c.classList.remove('active'));
     playerPage.classList.add('open');
     document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
     buildEpGrid();
     loadEpisode(currentEp);
     // Watch Together elementlerini enjekte et (tanımlandıktan sonra çağrılır)
@@ -4643,6 +4644,10 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     if (typeof wtCleanupPlayerElements === 'function') wtCleanupPlayerElements();
     playerPage.classList.remove('open');
     document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
+    // Video ve iframe durdur
+    const _vid = document.getElementById('html5VideoPlayer');
+    if (_vid) { _vid.pause(); _vid.src = ''; }
     document.getElementById('driveIframe').src = 'about:blank';
     // Go back to anime detail if we have a slug, otherwise home
     if (animeData.slug) {
@@ -10861,6 +10866,44 @@ console.log('[AniLand] Watch Together v2 yuklendi');
   }
 
   console.log('[AniLand] UI polish scripts loaded ✨');
+})();
+</script>
+
+<script>
+// ── Smooth Scroll (lerp) ──────────────────────────────────────────────────
+(function() {
+  // Mobil veya oynatıcı açıkken devreye girme
+  const isMobile = () => window.innerWidth <= 768;
+  const isPlayerOpen = () => document.getElementById('playerPage')?.classList.contains('open');
+
+  let current = window.scrollY;
+  let target  = window.scrollY;
+  let running = false;
+  const ease  = 0.10; // 0.06 = daha yavaş/yumuşak, 0.14 = daha hızlı
+
+  function tick() {
+    const diff = target - current;
+    if (Math.abs(diff) < 0.5) {
+      current = target;
+      running = false;
+      return;
+    }
+    current += diff * ease;
+    window.scrollTo(0, current);
+    requestAnimationFrame(tick);
+  }
+
+  window.addEventListener('wheel', e => {
+    if (isMobile() || isPlayerOpen()) return;
+    e.preventDefault();
+    target = Math.max(0, Math.min(target + e.deltaY * 1.2, document.body.scrollHeight - window.innerHeight));
+    if (!running) { running = true; requestAnimationFrame(tick); }
+  }, { passive: false });
+
+  // Sayfa dışında scroll edilince (klavye, scrollbar) senkronize et
+  window.addEventListener('scroll', () => {
+    if (!running) { current = window.scrollY; target = window.scrollY; }
+  }, { passive: true });
 })();
 </script>
 </body>
