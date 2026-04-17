@@ -3427,7 +3427,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
       🔔
       <span class="nav-notif-badge" id="navNotifBadge" style="display:none;position:absolute;top:-2px;right:-2px;background:var(--red);color:#fff;border-radius:50%;width:18px;height:18px;font-size:0.7rem;display:flex;align-items:center;justify-content:center;font-weight:700;">0</span>
     </button>
-    <button class="btn-login" id="navLoginBtn" style="display:none;" aria-label="Giriş yap">Giriş Yap</button>
+    <button class="btn-login" id="navLoginBtn" aria-label="Giriş yap">Giriş Yap</button>
     <div style="position:relative;" id="navAvatarWrap">
       <button class="nav-avatar" id="navAvatar" style="display:none;" onclick="toggleNavMenu()" aria-label="Profil menüsü">
         <div class="nav-avatar-img" aria-hidden="true">🦊</div>
@@ -4389,7 +4389,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
 
   function buildEpGrid() {
     const grid = document.getElementById('epGrid');
-    grid.innerHTML = '';
+    if (!grid) return;
 
     // epTitles'dan sezon gruplarını çıkar (örn: "S2E3 - ..." → sezon 2)
     const seasonMap = {}; // { 1: [1,2,3,...], 2: [15,16,...] }
@@ -5062,7 +5062,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
   // localStorage sadece session token'ı saklar (hash/şifre asla burada olmaz).
 
   const API = 'https://aniland.onrender.com'; // Remote backend
-  const SESSION_KEY = 'aniland_token';
+  var SESSION_KEY = 'aniland_token';
 
   // Token yönetimi
   function getToken() { return localStorage.getItem(SESSION_KEY); }
@@ -5070,7 +5070,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
   function clearToken() { localStorage.removeItem(SESSION_KEY); }
 
   // Oturum bellekte tutulur (sayfa yenilenince /api/me ile yeniden çekilir)
-  let _session = null;
+  var _session = null;
   function getSession() { return _session; }
   function setSessionMemory(data) { _session = data; }
 
