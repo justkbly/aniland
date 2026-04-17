@@ -23,6 +23,7 @@ import json
 import threading
 import urllib.request
 import urllib.error
+import os
 
 try:
     from playwright.sync_api import sync_playwright
