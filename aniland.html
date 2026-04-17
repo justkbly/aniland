@@ -1778,64 +1778,128 @@
 
   /* ─── MOBİL OYNATICI ─── */
   @media (max-width: 768px) {
+    /* Oynatıcı sayfası: üstten alta scroll */
     .player-page {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      height: 100%;
-      height: -webkit-fill-available;
+      height: 100svh;
       overflow-y: auto;
       overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
     }
     .player-topbar {
-      padding: 0.6rem 1rem;
-      position: sticky;
-      top: 0;
-      z-index: 20;
+      padding: 0.55rem 0.9rem;
+      gap: 0.6rem;
+      position: sticky; top: 0; z-index: 20;
     }
-    .player-topbar-title { font-size: 1rem; }
+    .player-topbar-title { font-size: 0.95rem; }
     .player-topbar-sub { display: none; }
+
+    /* Layout: dikey */
     .player-layout {
       flex-direction: column;
       overflow: visible;
-      min-height: 0;
+      min-height: auto;
     }
     .player-main {
       padding: 0;
       overflow-y: visible;
     }
+
+    /* Video tam genişlik */
     .video-wrap {
       border-radius: 0;
       box-shadow: none;
       aspect-ratio: 16/9;
       width: 100%;
     }
-    .anime-info-bar {
-      padding: 0.75rem 1rem;
-      flex-wrap: wrap;
-      gap: 0.5rem;
+
+    /* Custom player kontrolleri */
+    #customPlayerUI .cp-controls {
+      padding: 0 0.6rem 0.5rem;
+      gap: 6px;
     }
-    .anime-info-title { font-size: 1rem; }
+    /* Sessiz tuşu yan vol slider mobilde gizle */
+    .cp-vol-slider { display: none; }
+    /* Hız seçici gizle */
+    .cp-speed { display: none; }
+    /* Pip divleri gizle */
+    .cp-pip { display: none; }
+    /* Buton boyutları büyüt — dokunmatik için */
+    .cp-btn { width: 42px; height: 42px; }
+    /* Tam ekran butonu her zaman sağda görünsün */
+    .cp-spacer { flex: 1; min-width: 4px; }
+    #cpFullscreen { flex-shrink: 0; }
+
+    /* Anime bilgi satırı */
+    .anime-info-bar {
+      padding: 0.65rem 0.9rem;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .anime-info-title { font-size: 0.95rem; }
+    .info-actions { gap: 0.4rem; flex-wrap: wrap; }
+    .action-btn { padding: 0.35rem 0.65rem; font-size: 0.78rem; }
+
+    /* Sub seçici */
+    .sub-selector {
+      padding: 0.4rem 0.9rem;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+    #epSubSelector { padding: 0.4rem 0.9rem; }
+
+    /* Bölüm sidebar: yatay strip */
     .player-sidebar {
       width: 100%;
       border-left: none;
       border-top: 1px solid rgba(255,255,255,0.06);
-      max-height: 220px;
+      flex-direction: column;
+      max-height: none;
     }
-    .sub-selector {
-      padding: 0.4rem 0.75rem;
-      gap: 0.4rem;
+    .sidebar-header { padding: 0.7rem 0.9rem 0.5rem; font-size: 0.95rem; }
+    .sidebar-scroll {
+      display: flex;
+      flex-direction: row;
+      overflow-x: auto;
+      overflow-y: hidden;
+      flex: none;
+      padding: 0.6rem 0.9rem;
+      gap: 0.5rem;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
     }
-    #epSubSelector {
-      padding: 0.4rem 0.75rem;
+    .sidebar-scroll::-webkit-scrollbar { display: none; }
+    .sidebar-card {
+      flex-direction: column;
+      width: 100px;
+      flex-shrink: 0;
+      padding: 0;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 0;
+      border: 1px solid rgba(255,255,255,0.07);
     }
+    .sidebar-thumb {
+      width: 100%;
+      height: 58px;
+      border-radius: 0;
+      min-width: unset;
+    }
+    .sidebar-info { padding: 0.3rem 0.4rem; }
+    .sidebar-title { font-size: 0.72rem; white-space: normal; line-height: 1.2; }
+    .sidebar-ep { display: none; }
+
+    /* Rating + yorumlar padding */
+    .rating-section { padding: 1rem 0.9rem; }
+    .comments-section, #commentsSection { padding: 0 0.9rem 1.5rem; }
+
+    /* WT paneli: tam genişlik, alt */
     .wt-panel-wrap {
       width: 100% !important;
-      height: 400px !important;
+      height: 380px !important;
       border-left: none;
       border-top: 1px solid rgba(0,212,180,0.15);
-    }
-    #customPlayerUI .cp-controls {
-      padding: 0 0.5rem 0.4rem;
     }
   }
   .sidebar-card.active { background: rgba(99,102,241,0.08); border-color: rgba(99,102,241,0.15); }
