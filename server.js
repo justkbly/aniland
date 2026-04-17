@@ -39,6 +39,7 @@ const AnimeSchema = new mongoose.Schema({
   epLinks:     mongoose.Schema.Types.Mixed,
   epTitles:    mongoose.Schema.Types.Mixed,
   epSubs:      mongoose.Schema.Types.Mixed,
+  epMeta:      mongoose.Schema.Types.Mixed,
   coverImage:  String,
   bannerImage: String,
   altTitle:    String,
@@ -966,6 +967,7 @@ const routes = {
         epLinks:  body.epLinks  || {},
         epTitles: body.epTitles || {},
         epSubs:   body.epSubs   || {},
+        epMeta:   body.epMeta   || {},
         coverImage:  body.coverImage  || '',
         bannerImage: body.bannerImage || '',
         altTitle:    body.altTitle    || '',
@@ -1035,6 +1037,7 @@ const routes = {
       if (body.epLinks  !== undefined) anime.epLinks  = body.epLinks;
       if (body.epTitles !== undefined) anime.epTitles = body.epTitles;
       if (body.epSubs   !== undefined) anime.epSubs   = body.epSubs;
+      if (body.epMeta   !== undefined) anime.epMeta   = body.epMeta;
       if (body.coverImage  !== undefined) anime.coverImage  = body.coverImage;
       if (body.bannerImage !== undefined) anime.bannerImage = body.bannerImage;
       if (body.altTitle    !== undefined) anime.altTitle    = body.altTitle;
@@ -1086,6 +1089,7 @@ const routes = {
           epLinks:     a.epLinks     || {},
           epTitles:    a.epTitles    || {},
           epSubs:      a.epSubs      || {},
+          epMeta:      a.epMeta      || {},
           coverImage:  a.coverImage  || '',
           bannerImage: a.bannerImage || '',
           altTitle:    a.altTitle    || '',

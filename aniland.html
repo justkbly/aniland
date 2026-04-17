@@ -2490,6 +2490,24 @@
 }
 .cp-progress:hover .cp-hover-time { opacity: 1; }
 
+.cp-thumb-preview {
+  position: absolute;
+  bottom: 30px;
+  transform: translateX(-50%);
+  display: none;
+  pointer-events: none;
+  z-index: 10;
+}
+.cp-thumb-preview img {
+  width: 160px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 2px solid rgba(255,255,255,0.18);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.7);
+  display: block;
+}
+
 /* ─── Bottom row ─── */
 .cp-row {
   display: flex;
@@ -3950,6 +3968,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
   function loadEpisode(epNum) {
     console.debug('[loadEpisode]', epNum, '| url:', currentEpLinks[String(epNum)] || '(yok)', '| başlık:', currentEpTitles[String(epNum)] || '(yok)');
     currentEp = epNum;
+    currentEpThumbnails = (currentEpMeta[String(epNum)] || {}).thumbnails || {};
     window._wtCurrentEp = epNum; // Watch Together senkronizasyonu için
     window._wtLoadEpisode = loadEpisode; // Watch Together dışarıdan çağırabilsin
     const embedUrl = currentEpLinks[String(epNum)] || '';
@@ -4004,6 +4023,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
               <div class="cp-progress" id="cpProgress">
                 <div class="cp-progress-fill" id="cpFill"></div>
                 <div class="cp-progress-thumb" id="cpThumb"></div>
+                <div class="cp-thumb-preview" id="cpThumbPreview"><img id="cpThumbImg" src="" alt=""/></div>
                 <div class="cp-hover-time" id="cpHoverTime">0:00</div>
               </div>
               <div class="cp-row">
@@ -4090,14 +4110,33 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
           });
           window.addEventListener('mouseup', () => { _cpDragging = false; });
 
+          const cpThumbPreview = document.getElementById('cpThumbPreview');
+          const cpThumbImg    = document.getElementById('cpThumbImg');
+
           cpProgress.addEventListener('mousemove', e => {
             const r = cpProgress.getBoundingClientRect();
             const frac = (e.clientX - r.left) / r.width;
             const dur = videoElement.duration;
             if (isFinite(dur)) {
-              cpHoverTime.textContent = cpFmtTime(frac * dur);
-              cpHoverTime.style.left = Math.max(20, Math.min(r.width - 20, e.clientX - r.left)) + 'px';
+              const hoverSec = frac * dur;
+              const hoverX = Math.max(20, Math.min(r.width - 20, e.clientX - r.left));
+              cpHoverTime.textContent = cpFmtTime(hoverSec);
+              cpHoverTime.style.left = hoverX + 'px';
+
+              const thumbKeys = Object.keys(currentEpThumbnails).map(Number).sort((a, b) => a - b);
+              if (thumbKeys.length > 0) {
+                const nearest = thumbKeys.reduce((prev, cur) =>
+                  Math.abs(cur - hoverSec) < Math.abs(prev - hoverSec) ? cur : prev);
+                cpThumbImg.src = currentEpThumbnails[String(nearest)];
+                cpThumbPreview.style.left = hoverX + 'px';
+                cpThumbPreview.style.display = 'block';
+              } else {
+                cpThumbPreview.style.display = 'none';
+              }
             }
+          });
+          cpProgress.addEventListener('mouseleave', () => {
+            cpThumbPreview.style.display = 'none';
           });
 
           // Touch seek
@@ -4378,7 +4417,10 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
         const btn = document.createElement('button');
         const hasLink = !!currentEpLinks[String(i)];
         btn.className = 'ep-btn' + (i === currentEp ? ' current' : '') + (hasLink ? ' has-link' : ' no-link');
-        btn.textContent = i;
+        // Sezon içi numara: "S2E3 - ..." → 3, yoksa global numara
+        const titleStr = currentEpTitles[String(i)] || '';
+        const epMatch = titleStr.match(/^S\d+E(\d+)/i);
+        btn.textContent = epMatch ? parseInt(epMatch[1]) : i;
         btn.title = hasLink ? 'Bölüm ' + i + ' — İzle' : 'Bölüm ' + i + ' — Link yok';
         btn.addEventListener('click', () => {
           if (!hasLink) { showToast('⚠ Bu bölüm için henüz link eklenmemiş.'); return; }
@@ -4390,8 +4432,10 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
   }
 
   let currentEpSubs = {};
+  let currentEpMeta = {};
+  let currentEpThumbnails = {};
 
-  function openPlayer(title, sub, emoji, grad, epLinks, startEp, slug, totalEps, epTitles, epSubs) {
+  function openPlayer(title, sub, emoji, grad, epLinks, startEp, slug, totalEps, epTitles, epSubs, epMeta) {
     console.debug('[openPlayer]', { title, slug, startEp, totalEps, epLinkCount: Object.keys(epLinks||{}).length, epTitleCount: Object.keys(epTitles||{}).length });
     document.getElementById('playerTitle').textContent = title;
     document.getElementById('playerAnimeTitle').textContent = title;
@@ -4402,6 +4446,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     currentEpLinks = epLinks || {};
     currentEpTitles = epTitles || {};
     currentEpSubs = epSubs || {};
+    currentEpMeta = epMeta || {};
     currentEp = startEp || parseInt((sub.match(/Bölüm (\d+)/) || [,1])[1]) || 1;
     // Watch Together: currentEp'i global'e yaz (animeData zaten window._wtAnimeData referansı)
     window._wtCurrentEp = currentEp;
@@ -4436,7 +4481,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     if (animes.length > 0) {
       const a = animes[0];
       window.location.hash = '#/anime/' + a.slug + '/ep/1';
-      openPlayer(a.title, 'Bölüm 1', a.emoji, '', a.epLinks || {}, 1, a.slug, a.eps, a.epTitles || {}, a.epSubs || {});
+      openPlayer(a.title, 'Bölüm 1', a.emoji, '', a.epLinks || {}, 1, a.slug, a.eps, a.epTitles || {}, a.epSubs || {}, a.epMeta || {});
     } else {
       openPlayer('Demo Anime', 'Bölüm 1', '🎬', '', {}, 1, '', 1);
     }
@@ -7095,7 +7140,7 @@ function renderProfileWatchlist(username) {
         const entry = wl2.find(w => w.slug === slug);
         const startEp = (entry && entry.watchedEps && entry.status !== 'completed') ? parseInt(entry.watchedEps) : 1;
         window.location.hash = '#/anime/' + slug + '/ep/' + startEp;
-        openPlayer(anime.title, 'Bölüm ' + startEp, anime.emoji, '', anime.epLinks || {}, startEp, slug, anime.eps, anime.epTitles || {}, anime.epSubs || {});
+        openPlayer(anime.title, 'Bölüm ' + startEp, anime.emoji, '', anime.epLinks || {}, startEp, slug, anime.eps, anime.epTitles || {}, anime.epSubs || {}, anime.epMeta || {});
       }
     });
   });
@@ -9275,7 +9320,7 @@ function openAnimeDetail(anime) {
   document.getElementById('detailPlayBtn').onclick = () => {
     document.getElementById('animeDetailPage').classList.remove('open');
     window.location.hash = '#/anime/' + anime.slug + '/ep/1';
-    openPlayer(anime.title, anime.epTitles?.['1'] || 'Bölüm 1', anime.emoji, '', anime.epLinks || {}, 1, anime.slug, anime.eps, anime.epTitles || {}, anime.epSubs || {});
+    openPlayer(anime.title, anime.epTitles?.['1'] || 'Bölüm 1', anime.emoji, '', anime.epLinks || {}, 1, anime.slug, anime.eps, anime.epTitles || {}, anime.epSubs || {}, anime.epMeta || {});
   };
 
   // ── Bilgi kartları ──
@@ -9335,7 +9380,7 @@ function openAnimeDetail(anime) {
         const ep = Number(btn.dataset.ep);
         document.getElementById('animeDetailPage').classList.remove('open');
         window.location.hash = '#/anime/' + anime.slug + '/ep/' + ep;
-        openPlayer(anime.title, epTitles[String(ep)] || ('Bölüm ' + ep), anime.emoji, '', epLinks, ep, anime.slug, anime.eps, epTitles, anime.epSubs || {});
+        openPlayer(anime.title, epTitles[String(ep)] || ('Bölüm ' + ep), anime.emoji, '', epLinks, ep, anime.slug, anime.eps, epTitles, anime.epSubs || {}, anime.epMeta || {});
       });
     });
   } else {
@@ -9375,7 +9420,7 @@ async function handleHash() {
     const anime = getAnimes().find(a => a.slug === slug);
     if (anime) {
       document.getElementById('animeDetailPage').classList.remove('open');
-      openPlayer(anime.title, 'Bölüm ' + epNum, anime.emoji, '', anime.epLinks || {}, epNum, anime.slug, anime.eps, anime.epTitles || {}, anime.epSubs || {});
+      openPlayer(anime.title, 'Bölüm ' + epNum, anime.emoji, '', anime.epLinks || {}, epNum, anime.slug, anime.eps, anime.epTitles || {}, anime.epSubs || {}, anime.epMeta || {});
     }
     return;
   }
