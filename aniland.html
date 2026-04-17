@@ -141,6 +141,16 @@
     filter: drop-shadow(0 0 10px rgba(255,90,142,0.3));
   }
 
+  .logo-img {
+    height: 38px;
+    width: auto;
+    object-fit: contain;
+    display: block;
+    transition: transform 0.3s, filter 0.3s;
+    filter: drop-shadow(0 0 8px rgba(255,90,142,0.3));
+  }
+  .logo:hover .logo-img { transform: scale(1.06); filter: drop-shadow(0 0 14px rgba(255,90,142,0.55)); }
+
   .nav-links {
     display: flex;
     align-items: center;
@@ -3403,8 +3413,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
 <!-- NAVBAR -->
 <nav role="navigation" aria-label="Ana navigasyon">
   <a href="#" class="logo" aria-label="AniLand ana sayfaya git">
-    <div class="logo-icon" aria-hidden="true"></div>
-    <span class="logo-text">ANILAND</span>
+    <img src="logo.png" alt="AniLand" class="logo-img">
   </a>
 
   <ul class="nav-links" role="list">
@@ -3593,7 +3602,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
 <footer>
   <div class="footer-grid">
     <div class="footer-brand">
-      <span class="logo-text">AniLand</span>
+      <img src="logo.png" alt="AniLand" class="logo-img" style="height:36px;">
       <p class="footer-desc">
         Türkiye'nin en büyük anime izleme platformu. Yüksek kalite, Türkçe altyazı ve dublaj seçenekleriyle sizlere hizmet sunuyoruz.
       </p>
@@ -3659,11 +3668,10 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
       <div class="player-topbar-title" id="playerTitle">Demon Slayer</div>
       <div class="player-topbar-sub" id="playerSub">Sezon 4 · Bölüm 8 · Türkçe Altyazı</div>
     </div>
-    <div style="display:flex;align-items:center;gap:0.75rem;">
+        <div style="display:flex;align-items:center;gap:0.75rem;">
       <span class="quality-badge">1080p</span>
       <a href="#" class="logo" style="gap:0.4rem;">
-        <div class="logo-icon" style="width:28px;height:28px;font-size:1rem;">🌸</div>
-        <span class="logo-text" style="font-size:1.4rem;">AniLand</span>
+        <img src="logo.png" alt="AniLand" class="logo-img" style="height:28px;">
       </a>
     </div>
   </div>
@@ -3760,8 +3768,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     <button class="modal-close" id="modalClose">✕</button>
 
     <div class="modal-logo">
-      <div class="logo-icon" style="margin:0 auto 0.5rem;">🌸</div>
-      <span class="logo-text" style="font-size:1.8rem;">AniLand</span>
+      <img src="logo.png" alt="AniLand" class="logo-img" style="height:48px;margin:0 auto 0.5rem;display:block;">
     </div>
 
     <div class="modal-tabs">
