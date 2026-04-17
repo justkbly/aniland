@@ -434,7 +434,7 @@ function readBody(req) {
     let data = '';
     req.on('data', chunk => {
       data += chunk;
-      if (data.length > 1e6) reject(new Error('Too large'));
+      if (data.length > 10e6) reject(new Error('Too large'));
     });
     req.on('end', () => {
       if (!data.trim()) { resolve({}); return; }
