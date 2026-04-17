@@ -49,9 +49,7 @@ def tprint(*args, **kwargs):
 
 BASE             = "https://animecix.tv"
 QUALITY_PRIORITY = ["1080p", "720p", "480p"]
-SESSIONS_FILE    = "sessions.json"
-USERS_FILE       = "users.json"
-SERVER_URL       = "http://localhost:3030"
+SERVER_URL       = os.environ.get("SERVER_URL", "http://localhost:3030")
 
 IFRAME_HOSTS = [
     'tau-video', 'filemoon', 'streamtape', 'sibnet',
@@ -581,32 +579,18 @@ def upsert_anime(anime_data, token):
     return api_request("PATCH", f"{SERVER_URL}/api/animes/{existing['id']}", anime_data, token)
 
 def get_admin_token():
-    import os
+    admin_user = os.environ.get("ADMIN_USERNAME", "admin")
+    admin_pass = os.environ.get("ADMIN_PASSWORD", "admin123")
     try:
-        with open(SESSIONS_FILE, "r", encoding="utf-8") as f:
-            sessions = json.load(f)
-        now = time.time() * 1000
-        ttl = 30 * 24 * 60 * 60 * 1000
-        for tok, d in sessions.items():
-            if d.get("role") == "admin" and (now - d.get("loginAt", 0)) < ttl:
-                return tok
-    except Exception:
-        sessions = {}
-    try:
-        with open(USERS_FILE, "r", encoding="utf-8") as f:
-            users = json.load(f)
-        admin = next((u for u in users if u.get("role") == "admin"), None)
-        if not admin: print("[!] Admin bulunamadı."); return None
-        tok = os.urandom(32).hex()
-        sessions[tok] = {
-            "username": admin["username"], "email": admin.get("email",""),
-            "role": "admin", "joined": admin.get("joined",0),
-            "loginAt": int(time.time() * 1000),
-        }
-        with open(SESSIONS_FILE, "w", encoding="utf-8") as f:
-            json.dump(sessions, f, ensure_ascii=False, indent=2)
-        tprint(f"[+] Admin token oluşturuldu ({admin['username']}).")
-        return tok
+        status, resp = api_request("POST", f"{SERVER_URL}/api/login", {
+            "usernameOrEmail": admin_user,
+            "password": admin_pass,
+        })
+        if status == 200 and resp.get("token"):
+            tprint(f"[+] Admin token alındı ({admin_user}).")
+            return resp["token"]
+        print(f"[!] Login başarısız (status={status}): {resp}")
+        return None
     except Exception as e:
         print(f"[!] Token hatası: {e}"); return None
 
