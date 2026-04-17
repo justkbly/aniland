@@ -3699,10 +3699,10 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
       <div class="anime-info-bar">
         <div>
           <div class="anime-info-title" id="playerAnimeTitle">Demon Slayer: Kimetsu no Yaiba</div>
-          <div class="anime-info-meta">
+          <div class="anime-info-meta" id="playerMetaChips">
             <span class="meta-chip">⭐ 9.1</span>
             <span class="meta-chip">📅 2024</span>
-            <span class="meta-chip">🎬 Sezon 4</span>
+            <span class="meta-chip">🎬 —</span>
           </div>
         </div>
         <div class="info-actions">
@@ -4450,6 +4450,17 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     currentEp = startEp || parseInt((sub.match(/Bölüm (\d+)/) || [,1])[1]) || 1;
     // Watch Together: currentEp'i global'e yaz (animeData zaten window._wtAnimeData referansı)
     window._wtCurrentEp = currentEp;
+    // Meta chips güncelle
+    const _chipsEl = document.getElementById('playerMetaChips');
+    if (_chipsEl && slug) {
+      const _a = getAnimes().find(x => x.slug === slug);
+      if (_a) {
+        const _score = _a.score ? '⭐ ' + _a.score : '';
+        const _year  = _a.year  ? '📅 ' + _a.year  : '';
+        const _genre = _a.genre ? '🎬 ' + _a.genre  : '';
+        _chipsEl.innerHTML = [_score, _year, _genre].filter(Boolean).map(c => `<span class="meta-chip">${c}</span>`).join('');
+      }
+    }
     document.querySelectorAll('.sidebar-card').forEach(c => c.classList.remove('active'));
     playerPage.classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -9088,19 +9099,19 @@ function processImportFile(file) {
       const data = JSON.parse(e.target.result);
       let animesImported = 0, usersImported = 0;
 
-      // Anime verisi — backend API üzerinden ekle
-      if (data.animes && Array.isArray(data.animes)) {
-        await fetchAnimes();
-        const existing = getAnimes();
-        const existingSlugs = new Set(existing.map(a => a.slug));
-        const newOnes = data.animes.filter(a => !existingSlugs.has(a.slug));
-        for (const a of newOnes) {
-          try {
-            await authFetch('/api/animes', { method: 'POST', body: JSON.stringify(a) });
-          } catch {}
+      // Anime verisi — düz dizi (animes.json) veya {animes:[...]} formatı
+      const animeList = Array.isArray(data) ? data : (data.animes && Array.isArray(data.animes) ? data.animes : null);
+      if (animeList) {
+        status.innerHTML = '<span style="color:var(--muted);">⏳ ' + animeList.length + ' anime /api/animes/bulk ile yükleniyor...</span>';
+        try {
+          const res = await authFetch('/api/animes/bulk', { method: 'POST', body: JSON.stringify(animeList) });
+          const result = await res.json();
+          animesImported = result.added || 0;
+          await fetchAnimes();
+        } catch(err) {
+          status.innerHTML = '<span style="color:var(--red);">⚠ Bulk import hatası: ' + err.message + '</span>';
+          return;
         }
-        await fetchAnimes(); // önbelleği güncelle
-        animesImported = newOnes.length;
       }
 
       // Kullanıcı verisi — backend API'ye gönder
