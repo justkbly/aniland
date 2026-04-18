@@ -2348,6 +2348,28 @@
   body.light .hamburger { background: rgba(200,160,210,0.2); border-color: rgba(200,160,210,0.3); }
   body.light .hamburger-line { background: #2a1a2e; }
 
+  /* Mobil drawer kullanıcı kartı */
+  .mobile-nav-user {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.9rem 0 1rem;
+    border-bottom: 1px solid rgba(0,212,180,0.1);
+    margin-bottom: 0.6rem;
+  }
+  .mobile-nav-user-avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--sakura), var(--neon));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; font-weight: 700; color: #fff;
+    overflow: hidden; flex-shrink: 0;
+  }
+  .mobile-nav-user-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+  .mobile-nav-user-info { display: flex; flex-direction: column; gap: 0.25rem; }
+  .mobile-nav-user-name { font-size: 0.95rem; font-weight: 700; color: var(--text); letter-spacing: 0.5px; }
+  .mobile-nav-user-actions { display: flex; align-items: center; }
+
   @media (max-width: 768px) {
     .hamburger { display: flex; }
     .mobile-nav { display: block; }
@@ -2444,6 +2466,7 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    will-change: transform;
   }
   .video-iframe-container iframe {
     flex: 1;
@@ -3560,7 +3583,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
 }
 @media (max-width: 768px) {
   /* Ana sayfa body padding-bottom: alt nav için */
-  body { padding-bottom: 68px; }
+  body { padding-bottom: 76px; }
 
   /* Navbar logosu mobilde daha küçük */
   .logo-img { height: 64px; margin-top: 10px; margin-bottom: -18px; }
@@ -3569,14 +3592,20 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     display: flex;
     position: fixed;
     bottom: 0; left: 0; right: 0;
-    height: 62px;
-    background: rgba(10,10,18,0.97);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-top: 1px solid rgba(255,255,255,0.07);
+    height: 64px;
+    background: rgba(7,7,15,0.96);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border-top: 1px solid rgba(0,212,180,0.12);
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.4), 0 -1px 0 rgba(0,212,180,0.06);
     z-index: 150;
     align-items: stretch;
     padding-bottom: env(safe-area-inset-bottom);
+  }
+  body.light .mobile-bottom-nav {
+    background: rgba(237,228,245,0.97);
+    border-top-color: rgba(180,100,200,0.15);
+    box-shadow: 0 -4px 20px rgba(80,40,120,0.08);
   }
   .mbn-btn {
     flex: 1;
@@ -3584,24 +3613,54 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 3px;
+    gap: 4px;
     background: none;
     border: none;
     color: var(--muted);
     cursor: pointer;
-    transition: color 0.2s;
+    transition: color 0.2s, transform 0.15s;
     font-family: 'Rajdhani', sans-serif;
-    font-size: 0.65rem;
+    font-size: 0.62rem;
     font-weight: 700;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.8px;
     text-transform: uppercase;
     padding: 0;
     -webkit-tap-highlight-color: transparent;
+    position: relative;
   }
+  .mbn-btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%) scaleX(0);
+    width: 24px; height: 2.5px;
+    background: var(--sakura);
+    border-radius: 0 0 4px 4px;
+    transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .mbn-btn.active::before { transform: translateX(-50%) scaleX(1); }
   .mbn-btn svg { transition: transform 0.2s; }
-  .mbn-btn:active svg { transform: scale(0.88); }
+  .mbn-btn:active { transform: scale(0.93); }
   .mbn-btn.active { color: var(--sakura); }
-  .mbn-btn.active svg { filter: drop-shadow(0 0 6px rgba(255,90,142,0.6)); }
+  .mbn-btn.active svg {
+    filter: drop-shadow(0 0 6px rgba(255,90,142,0.55));
+    transform: translateY(-1px);
+  }
+  /* search butonunun active rengi neon */
+  .mbn-btn#mbnSearch.active { color: var(--neon); }
+  .mbn-btn#mbnSearch.active::before { background: var(--neon); }
+  .mbn-btn#mbnSearch.active svg { filter: drop-shadow(0 0 6px rgba(0,212,180,0.55)); }
+  /* profile: avatar mini chip when logged in */
+  .mbn-avatar-dot {
+    display: none;
+    width: 6px; height: 6px;
+    background: var(--neon);
+    border-radius: 50%;
+    position: absolute;
+    top: 6px; right: calc(50% - 14px);
+    box-shadow: 0 0 6px rgba(0,212,180,0.7);
+  }
+  .mbn-avatar-dot.visible { display: block; }
 }
 </style>
 </head>
@@ -3658,6 +3717,18 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
 
 <!-- MOBILE NAV DRAWER -->
 <div class="mobile-nav" id="mobileNav" role="navigation" aria-label="Mobil navigasyon">
+  <!-- Kullanıcı bilgi çubuğu (giriş yapılınca görünür) -->
+  <div class="mobile-nav-user" id="mobileNavUser" style="display:none;">
+    <div class="mobile-nav-user-avatar" id="mobileNavUserAvatar">?</div>
+    <div class="mobile-nav-user-info">
+      <div class="mobile-nav-user-name" id="mobileNavUserName"></div>
+      <div class="mobile-nav-user-actions">
+        <span onclick="hamburgerBtn.click();openProfile();" style="cursor:pointer;color:var(--neon);font-size:0.78rem;font-weight:700;">Profili Gör</span>
+        <span style="color:var(--muted);margin:0 0.4rem;">·</span>
+        <span onclick="hamburgerBtn.click();logout();" style="cursor:pointer;color:var(--red);font-size:0.78rem;font-weight:700;">Çıkış</span>
+      </div>
+    </div>
+  </div>
   <ul class="mobile-nav-links" role="list">
     <li><a href="/" style="color:var(--neon)!important;">Ana Sayfa</a></li>
     <li><a href="/anime">Anime</a></li>
@@ -3869,9 +3940,10 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg>
     Top 100
   </button>
-  <button class="mbn-btn" id="mbnProfile" onclick="document.getElementById('profileModal')?.classList.add('open')||document.getElementById('authModal')?.classList.add('open')">
+  <button class="mbn-btn" id="mbnProfile" onclick="openProfile()">
+    <span class="mbn-avatar-dot" id="mbnAvatarDot"></span>
     <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-    Profil
+    <span id="mbnProfileLabel">Giriş</span>
   </button>
 </nav>
 
@@ -5354,6 +5426,25 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     img.onerror = () => { navImg.innerHTML = ''; navImg.textContent = user.username.slice(0,1).toUpperCase(); };
     navImg.appendChild(img);
     if (user.role === 'admin') showAdminNavLink();
+    // Mobil alt nav profil butonu güncelle
+    const mbnLbl = document.getElementById('mbnProfileLabel');
+    if (mbnLbl) mbnLbl.textContent = user.username.slice(0,8);
+    const dot = document.getElementById('mbnAvatarDot');
+    if (dot) dot.classList.add('visible');
+    // Mobil drawer kullanıcı kartı
+    const drawerUser = document.getElementById('mobileNavUser');
+    if (drawerUser) {
+      drawerUser.style.display = 'flex';
+      document.getElementById('mobileNavUserName').textContent = user.username;
+      const drawerAvatar = document.getElementById('mobileNavUserAvatar');
+      const profile2 = getUserProfile(user.username);
+      const photoSrc2 = (profile2 && profile2.photoDataUrl) ? profile2.photoDataUrl : avatarUrl(user.username, 80);
+      drawerAvatar.innerHTML = '';
+      const img2 = document.createElement('img');
+      img2.src = photoSrc2;
+      img2.onerror = () => { drawerAvatar.innerHTML = ''; drawerAvatar.textContent = user.username.slice(0,1).toUpperCase(); };
+      drawerAvatar.appendChild(img2);
+    }
   }
 
   function showAdminNavLink() {
@@ -5459,6 +5550,14 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     if (_np) _np.classList.remove('open');
     const adminLink = document.getElementById('adminNavLink');
     if (adminLink) adminLink.parentElement.remove();
+    // Mobil alt nav profil sıfırla
+    const mbnLbl = document.getElementById('mbnProfileLabel');
+    if (mbnLbl) mbnLbl.textContent = 'Giriş';
+    const dot = document.getElementById('mbnAvatarDot');
+    if (dot) dot.classList.remove('visible');
+    // Mobil drawer kullanıcı kartını gizle
+    const drawerUser = document.getElementById('mobileNavUser');
+    if (drawerUser) drawerUser.style.display = 'none';
     window.location.hash = '';
     renderHomePage();
   }
@@ -5620,6 +5719,13 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
   .search-clear:hover { background: rgba(99,102,241,0.3); color: var(--sakura); }
 
   .search-body { padding: 2rem; max-width: 1200px; margin: 0 auto; }
+  @media (max-width: 768px) {
+    .search-body { padding: 1.25rem 1rem 90px; }
+    .search-topbar { padding: 0.75rem 1rem; }
+    .search-input-big { font-size: 1rem; padding: 0.7rem 1rem 0.7rem 2.8rem; }
+    .search-results-grid { grid-template-columns: repeat(2, 1fr); gap: 0.9rem; }
+    .search-back { width: 36px; height: 36px; border-radius: 8px; font-size: 1rem; }
+  }
 
   /* FILTERS */
   .search-filters {
@@ -5881,6 +5987,8 @@ function closeSearch() {
   searchQuery = '';
   searchClear.classList.remove('visible');
   document.querySelector('.search-box input').value = '';
+  const mbnSearch = document.getElementById('mbnSearch');
+  if (mbnSearch) mbnSearch.classList.remove('active');
 }
 
 function renderEmpty() {
@@ -6041,6 +6149,8 @@ function openSearch(q) {
   refreshFilterChips();
   searchPage.classList.add('open');
   document.body.style.overflow = 'hidden';
+  const mbnSearch = document.getElementById('mbnSearch');
+  if (mbnSearch) mbnSearch.classList.add('active');
   setTimeout(() => searchInputBig.focus(), 100);
   if (q) {
     searchInputBig.value = q;
@@ -10004,16 +10114,25 @@ function wtFireEmoji(emoji) {
 }
 
 function wtStartTicker() {
-  clearInterval(WT.ticker);
-  WT.ticker = setInterval(() => {
-    if (!WT.localPlaying) return;
-    WT.localTime += 1;
-    wtUpdateSeekBar();
-  }, 1000);
+  wtStopTicker();
+  let last = performance.now();
+  function tick(now) {
+    if (!WT.ticker) return;
+    if (WT.localPlaying) {
+      const elapsed = (now - last) / 1000;
+      last = now;
+      WT.localTime += elapsed;
+      wtUpdateSeekBar();
+    } else {
+      last = now;
+    }
+    WT.ticker = requestAnimationFrame(tick);
+  }
+  WT.ticker = requestAnimationFrame(tick);
 }
 
 function wtStopTicker() {
-  clearInterval(WT.ticker);
+  if (WT.ticker) cancelAnimationFrame(WT.ticker);
   WT.ticker = null;
 }
 
