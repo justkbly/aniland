@@ -1860,6 +1860,38 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       return res.end(html);
     }
+
+    // ─── SEO: robots.txt ──────────────────────────────────────────────────
+    if (url === '/robots.txt') {
+      const robots = [
+        'User-agent: *',
+        'Allow: /',
+        '',
+        'Sitemap: https://aniland.net/sitemap.xml',
+      ].join('\n');
+      res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+      return res.end(robots);
+    }
+
+    // ─── SEO: sitemap.xml ─────────────────────────────────────────────────
+    if (url === '/sitemap.xml') {
+      const BASE = 'https://aniland.net';
+      const today = new Date().toISOString().split('T')[0];
+      const staticPages = ['/', '/anime', '/sezon', '/takvim', '/top100'];
+      let animes = [];
+      try { animes = await readAnimes(); } catch (_) {}
+
+      const urlTags = [
+        ...staticPages.map(p => `  <url><loc>${BASE}${p}</loc><lastmod>${today}</lastmod><changefreq>daily</changefreq><priority>${p === '/' ? '1.0' : '0.8'}</priority></url>`),
+        ...animes
+          .filter(a => a.slug)
+          .map(a => `  <url><loc>${BASE}/anime#/anime/${a.slug}</loc><lastmod>${today}</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>`),
+      ].join('\n');
+
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urlTags}\n</urlset>`;
+      res.writeHead(200, { 'Content-Type': 'application/xml; charset=utf-8' });
+      return res.end(xml);
+    }
   }
 
   // Parametreli route'lar
