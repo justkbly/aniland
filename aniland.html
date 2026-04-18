@@ -4013,7 +4013,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
         </div>
         <!-- NO LINK SCREEN (shown when no drive link) -->
         <div class="video-screen" id="videoNoLinkScreen">
-          <div class="video-emoji" id="playerEmoji">🎬</div>
+          <div class="video-emoji" id="playerEmoji"></div>
           <div class="no-link-msg" id="noLinkMsg">Bu bölüm için henüz video linki eklenmemiş.</div>
         </div>
       </div>
@@ -4624,7 +4624,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
         document.getElementById('html5VideoPlayer').style.display = 'none';
       }
       noLinkScreen.style.display = 'flex';
-      document.getElementById('playerEmoji').textContent = animeData.emoji || '🎬';
+      document.getElementById('playerEmoji').innerHTML = animeData.coverImage ? `<img src="${escHtml(animeData.coverImage)}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;" alt="${escHtml(animeData.title||'')}">` : '';
     }
 
     // Çevirmen seçici (player altı + bölüm listesi üstü)
@@ -4760,12 +4760,12 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
   let currentEpMeta = {};
   let currentEpThumbnails = {};
 
-  function openPlayer(title, sub, emoji, grad, epLinks, startEp, slug, totalEps, epTitles, epSubs, epMeta) {
+  function openPlayer(title, sub, coverImg, grad, epLinks, startEp, slug, totalEps, epTitles, epSubs, epMeta) {
     console.debug('[openPlayer]', { title, slug, startEp, totalEps, epLinkCount: Object.keys(epLinks||{}).length, epTitleCount: Object.keys(epTitles||{}).length });
     document.getElementById('playerTitle').textContent = title;
     document.getElementById('playerAnimeTitle').textContent = title;
     animeData.title = title;
-    animeData.emoji = emoji || '🎬';
+    animeData.coverImage = coverImg || '';
     animeData.slug = slug || '';
     animeData.totalEps = parseInt(totalEps) || 1;
     currentEpLinks = epLinks || {};
@@ -4817,7 +4817,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     if (animes.length > 0) {
       const a = animes[0];
       history.pushState({anime: a.slug, ep: 1}, '', '/anime/' + a.slug + '/ep/1');
-      openPlayer(a.title, 'Bölüm 1', a.emoji, '', a.epLinks || {}, 1, a.slug, a.eps, a.epTitles || {}, a.epSubs || {}, a.epMeta || {});
+      openPlayer(a.title, 'Bölüm 1', a.coverImage || '', '', a.epLinks || {}, 1, a.slug, a.eps, a.epTitles || {}, a.epSubs || {}, a.epMeta || {});
     } else {
       openPlayer('Demo Anime', 'Bölüm 1', '🎬', '', {}, 1, '', 1);
     }
@@ -6115,7 +6115,7 @@ function buildResultCard(a, hl) {
   const meta = escHtml((_isFilm ? 'Film' : (a.eps ? a.eps + ' Bölüm' : '')) + (a.year ? ' · ' + a.year : ''));
   return `
     <div class="result-card" style="background:${bg};" data-slug="${escHtml(a.slug)}">
-      <div class="rc-thumb">${a.coverImage ? `<img src="${escHtml(a.coverImage)}" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block;" alt="${escHtml(a.title)}">` : escHtml(a.emoji || '🎬')}</div>
+      <div class="rc-thumb">${a.coverImage ? `<img src="${escHtml(a.coverImage)}" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block;" alt="${escHtml(a.title)}">` : ''}</div>
       <div class="rc-base"></div>
       <div class="rc-overlay"></div>
       <div class="rc-genre">${escHtml(a.genre || '')}</div>
@@ -7840,7 +7840,7 @@ async function renderPersonalStats(username) {
     // Ratings given
     const ratedAnimes = Object.entries(ratings).map(([slug, score]) => {
       const a = animes.find(x => x.slug === slug);
-      return { slug, title: a ? a.title : slug, emoji: a ? a.emoji : '🎬', score };
+      return { slug, title: a ? a.title : slug, coverImage: a ? a.coverImage : '', score };
     }).sort((a,b) => b.score - a.score);
     const avgMyRating = ratedAnimes.length ? (ratedAnimes.reduce((s,r) => s + r.score, 0) / ratedAnimes.length).toFixed(1) : '—';
 
@@ -9040,7 +9040,7 @@ function renderAdminTable() {
   animes.forEach((a) => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td class="tbl-emoji">${escHtml(a.emoji) || '🎬'}</td>
+      <td class="tbl-thumb">${a.coverImage ? `<img src="${escHtml(a.coverImage)}" style="width:32px;height:40px;object-fit:cover;border-radius:4px;">` : ''}</td>
       <td><div class="tbl-title">${escHtml(a.title)}</div></td>
       <td class="tbl-genre">${escHtml(a.genre) || '-'}</td>
       <td class="tbl-score">★ ${escHtml(a.score) || '-'}</td>
@@ -9313,7 +9313,7 @@ async function loadAnalytics() {
     // Top rated
     topEl.innerHTML = topRated.length ? topRated.map((a,i) => `
       <div class="analytics-bar-row">
-        <div class="analytics-bar-label">${escHtml(a.emoji||'🎬')} ${escHtml(a.title)}</div>
+        <div class="analytics-bar-label">${escHtml(a.title)}</div>
         <div class="analytics-bar-track"><div class="analytics-bar-fill" style="width:${Math.round(a.avg/5*100)}%;background:linear-gradient(90deg,var(--gold),#e0940a)"></div></div>
         <div class="analytics-bar-val">★${a.avg}</div>
       </div>`).join('') : '<div style="color:var(--muted);font-size:0.85rem;">Henüz puan verilmemiş.</div>';
@@ -9321,7 +9321,7 @@ async function loadAnalytics() {
     const maxC = mostCommented[0] ? mostCommented[0].count : 1;
     commEl.innerHTML = mostCommented.length ? mostCommented.map(a => `
       <div class="analytics-bar-row">
-        <div class="analytics-bar-label">${escHtml(a.emoji||'🎬')} ${escHtml(a.title)}</div>
+        <div class="analytics-bar-label">${escHtml(a.title)}</div>
         <div class="analytics-bar-track"><div class="analytics-bar-fill" style="width:${Math.round(a.count/maxC*100)}%;background:linear-gradient(90deg,var(--sakura),#4f46e5)"></div></div>
         <div class="analytics-bar-val">${a.count}</div>
       </div>`).join('') : '<div style="color:var(--muted);font-size:0.85rem;">Henüz yorum yok.</div>';
@@ -9705,7 +9705,7 @@ function makeAnimeCard(a) {
     : `background:linear-gradient(135deg,${escHtml(a.color1||'#1a0a2e')},${escHtml(a.color2||'#2e0a1a')});`;
   const thumbContent = a.coverImage
     ? `<img src="${escHtml(a.coverImage)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" alt="${escHtml(a.title)}">`
-    : escHtml(a.emoji || '🎬');
+    : '';
   const scoreLabel = '★ ' + getDisplayScore(a.slug);
   const isFilm = parseInt(a.eps) === 1;
   const metaLabel = isFilm ? 'Film' : ((a.eps || '?') + ' bölüm');
@@ -9799,7 +9799,7 @@ function renderSimilarAnimes(anime) {
     const bg = `background:linear-gradient(135deg,${escHtml(a.color1||'#1a0a2e')},${escHtml(a.color2||'#2e0a1a')});`;
     const thumb = a.coverImage
       ? `<img src="${escHtml(a.coverImage)}" alt="${escHtml(a.title)}">`
-      : `<div class="dsc-fallback" style="${bg}">${escHtml(a.emoji||'🎬')}</div>`;
+      : `<div class="dsc-fallback" style="${bg}"></div>`;
     return `<div class="dsc" data-slug="${escHtml(a.slug)}" style="${bg}">
       ${thumb}
       <div class="dsc-title">${escHtml(a.title)}</div>
@@ -9825,7 +9825,7 @@ function renderHomePage() {
     heroContainer.innerHTML = animes.slice(0, 3).map((a, i) => {
       const thumbContent = a.coverImage
         ? `<img src="${escHtml(a.coverImage)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" alt="${escHtml(a.title)}">`
-        : escHtml(a.emoji || '🎬');
+        : '';
       return `<div class="hero-card ${offsets[i]}" data-slug="${escHtml(a.slug)}" style="cursor:pointer;">
         <div class="card-thumb" style="background:linear-gradient(135deg,${escHtml(a.color1||'#1a0a2e')},${escHtml(a.color2||'#2e0a1a')});">${thumbContent}</div>
         <div class="card-base-overlay"></div>
@@ -10242,7 +10242,7 @@ async function loadSettings() {
         if (img) {
           emojiEl.innerHTML = `<img src="${escHtml(img)}" style="width:100%;height:100%;object-fit:cover;object-position:center 20%;display:block;" alt="${escHtml(fa.title)}">`;
         } else {
-          emojiEl.textContent = fa.emoji || '⭐';
+          emojiEl.innerHTML = '';
         }
       }
       // Arka plan rengi
@@ -10289,7 +10289,7 @@ async function loadSettings() {
     const _dla = getAnimes().find(a => a.slug === slug);
     if (_dla) {
       if (ep) {
-        openPlayer(_dla.title, 'Bölüm ' + ep, _dla.emoji, '', _dla.epLinks || {}, ep, _dla.slug, _dla.eps, _dla.epTitles || {}, _dla.epSubs || {}, _dla.epMeta || {});
+        openPlayer(_dla.title, 'Bölüm ' + ep, _dla.coverImage || '', '', _dla.epLinks || {}, ep, _dla.slug, _dla.eps, _dla.epTitles || {}, _dla.epSubs || {}, _dla.epMeta || {});
       } else {
         openAnimeDetail(_dla);
       }
