@@ -10407,6 +10407,7 @@ function openAnimeDetail(anime) {
 }
 
 document.getElementById('detailBack').addEventListener('click', () => {
+  document.title = 'AniLand';
   document.getElementById('animeDetailPage').classList.remove('open');
   unlockScroll();
   history.pushState({}, '', '/');
