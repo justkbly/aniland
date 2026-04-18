@@ -4948,8 +4948,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     }
     document.querySelectorAll('.sidebar-card').forEach(c => c.classList.remove('active'));
     playerPage.classList.add('open');
-    document.body.style.overflow = 'hidden';
-    document.documentElement.style.overflow = 'hidden';
+    lockScroll();
     buildEpGrid();
     loadEpisode(currentEp);
     // Watch Together elementlerini enjekte et (tanımlandıktan sonra çağrılır)
@@ -4991,8 +4990,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     }
     if (typeof wtCleanupPlayerElements === 'function') wtCleanupPlayerElements();
     playerPage.classList.remove('open');
-    document.body.style.overflow = '';
-    document.documentElement.style.overflow = '';
+    unlockScroll();
     // Video ve iframe durdur
     const _vid = document.getElementById('html5VideoPlayer');
     if (_vid) { _vid.pause(); _vid.src = ''; }
@@ -5530,6 +5528,27 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     renderComments(slug, ep);
   }
 
+
+  // ===== SCROLL LOCK (iOS-safe) =====
+  let _scrollLockY = 0;
+  function lockScroll() {
+    if (document.body.style.position === 'fixed') return;
+    _scrollLockY = window.scrollY;
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = '-' + _scrollLockY + 'px';
+    document.body.style.width = '100%';
+  }
+  function unlockScroll() {
+    if (document.body.style.position !== 'fixed') return;
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.width = '';
+    window.scrollTo(0, _scrollLockY);
+  }
+
+
   // ===== THEME TOGGLE =====
   const themeToggle = document.getElementById('themeToggle');
   const themeIcon = themeToggle.querySelector('.theme-icon');
@@ -5575,14 +5594,14 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
 
   function openModal(tab = 'login') {
     modal.classList.add('open');
-    document.body.style.overflow = 'hidden';
+    lockScroll();
     if (tab === 'register') switchTab('register');
     else switchTab('login');
   }
 
   function closeModal() {
     modal.classList.remove('open');
-    document.body.style.overflow = '';
+    unlockScroll();
     setTimeout(() => {
       formLogin.classList.remove('hidden');
       formRegister.classList.add('hidden');
@@ -6286,7 +6305,7 @@ const resultsHeader = document.getElementById('resultsHeader');
 
 function closeSearch() {
   searchPage.classList.remove('open');
-  document.body.style.overflow = '';
+  unlockScroll();
   searchInputBig.value = '';
   searchQuery = '';
   searchClear.classList.remove('visible');
@@ -6480,7 +6499,7 @@ function openSearch(q) {
   refreshFilterChips();
   populateYearFilter();
   searchPage.classList.add('open');
-  document.body.style.overflow = 'hidden';
+  lockScroll();
   const mbnSearch = document.getElementById('mbnSearch');
   if (mbnSearch) mbnSearch.classList.add('active');
   setTimeout(() => searchInputBig.focus(), 100);
@@ -6788,13 +6807,13 @@ const userSearchResults  = document.getElementById('userSearchResults');
 
 function openUserSearch() {
   userSearchBackdrop.classList.add('open');
-  document.body.style.overflow = 'hidden';
+  lockScroll();
   setTimeout(() => userSearchInput.focus(), 100);
 }
 
 function closeUserSearch() {
   userSearchBackdrop.classList.remove('open');
-  document.body.style.overflow = '';
+  unlockScroll();
   userSearchInput.value = '';
   userSearchResults.innerHTML = '<div class="user-search-hint">Kullanıcı adı yazarak arama yap</div>';
 }
@@ -6874,7 +6893,7 @@ function openPublicProfile(username) {
 
 function closePubProfile(goBack) {
   pubProfilePage.classList.remove('open');
-  document.body.style.overflow = '';
+  unlockScroll();
   if (goBack !== false) window.history.back();
 }
 
@@ -6882,7 +6901,7 @@ document.getElementById('pubProfileBack').addEventListener('click', () => closeP
 
 async function _renderPublicProfile(username) {
   pubProfilePage.classList.add('open');
-  document.body.style.overflow = 'hidden';
+  lockScroll();
   document.getElementById('pubProfileTopbarTitle').textContent = '@' + username;
   document.getElementById('pubProfileContent').innerHTML = `
     <div class="pub-profile-loading">
@@ -7069,7 +7088,7 @@ function _buildPublicProfileHTML(p) {
       _renderPublicProfile(e.state.pubProfile);
     } else {
       pubProfilePage.classList.remove('open');
-      document.body.style.overflow = '';
+      unlockScroll();
     }
   });
 })();
@@ -8223,14 +8242,14 @@ const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
 if (deleteBtn) {
   deleteBtn.addEventListener('click', () => {
     confirmOverlay.classList.add('open');
-    document.body.style.overflow = 'hidden';
+    lockScroll();
     confirmCancelBtn.focus();
   });
 }
 
 confirmCancelBtn.addEventListener('click', () => {
   confirmOverlay.classList.remove('open');
-  document.body.style.overflow = '';
+  unlockScroll();
   if (deleteBtn) deleteBtn.focus();
 });
 
@@ -8248,7 +8267,7 @@ confirmDeleteBtn.addEventListener('click', async () => {
     }
     // Başarılı: oturumu kapat, profil sayfasını kapat, ana sayfaya dön
     confirmOverlay.classList.remove('open');
-    document.body.style.overflow = '';
+    unlockScroll();
     closeProfile();
     logout();
     showToast('✓ Hesabın başarıyla silindi.');
@@ -8263,7 +8282,7 @@ confirmDeleteBtn.addEventListener('click', async () => {
 confirmOverlay.addEventListener('click', (e) => {
   if (e.target === confirmOverlay) {
     confirmOverlay.classList.remove('open');
-    document.body.style.overflow = '';
+    unlockScroll();
   }
 });
 
@@ -8271,7 +8290,7 @@ confirmOverlay.addEventListener('click', (e) => {
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && confirmOverlay.classList.contains('open')) {
     confirmOverlay.classList.remove('open');
-    document.body.style.overflow = '';
+    unlockScroll();
   }
   // Also close mobile nav
   if (e.key === 'Escape' && mobileNav.classList.contains('open')) {
@@ -9230,7 +9249,7 @@ async function openAdminPanel() {
   const session = getSession();
   if (!session || session.role !== 'admin') { alert('Bu sayfaya erişim yetkiniz yok.'); return; }
   document.getElementById('adminPage').classList.add('open');
-  document.body.style.overflow = 'hidden';
+  lockScroll();
   await fetchAnimes(); // Admin paneli açılırken taze veri çek
   renderAdminTable();
   updateAdminStats();
@@ -9242,7 +9261,7 @@ async function openAdminPanel() {
 
 document.getElementById('adminBack').addEventListener('click', () => {
   document.getElementById('adminPage').classList.remove('open');
-  document.body.style.overflow = '';
+  unlockScroll();
   window.location.hash = '';
   renderHomePage();
 });
@@ -9366,12 +9385,12 @@ function openEditAnimeModal(anime) {
   document.getElementById('ef-banner').value = anime.bannerImage || '';
   document.getElementById('ef-status').textContent = '';
   document.getElementById('editAnimeOverlay').classList.add('open');
-  document.body.style.overflow = 'hidden';
+  lockScroll();
 }
 
 function closeEditAnimeModal() {
   document.getElementById('editAnimeOverlay').classList.remove('open');
-  document.body.style.overflow = '';
+  unlockScroll();
 }
 
 document.getElementById('ef-gen-eps').addEventListener('click', () => {
@@ -10302,12 +10321,12 @@ function openAnimeDetail(anime) {
   renderSimilarAnimes(anime);
 
   document.getElementById('animeDetailPage').classList.add('open');
-  document.body.style.overflow = 'hidden';
+  lockScroll();
 }
 
 document.getElementById('detailBack').addEventListener('click', () => {
   document.getElementById('animeDetailPage').classList.remove('open');
-  document.body.style.overflow = '';
+  unlockScroll();
   history.pushState({}, '', '/');
 });
 
@@ -10323,8 +10342,7 @@ function closeAllOverlays() {
     document.getElementById('driveIframe').src = 'about:blank';
     if (typeof stopViewerPing === 'function') stopViewerPing();
   }
-  document.body.style.overflow = '';
-  document.documentElement.style.overflow = '';
+  unlockScroll();
 }
 
 // ===== HASH ROUTER =====
@@ -11423,7 +11441,7 @@ console.log('[AniLand] Watch Together v2 yuklendi');
     _followTitle.textContent = type === 'followers' ? 'TAKİPÇİLER' : 'TAKİP EDİLENLER';
     _followBody.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted);font-size:0.85rem;">Yükleniyor...</div>';
     _followOverlay.classList.add('open');
-    document.body.style.overflow = 'hidden';
+    lockScroll();
     try {
       const endpoint = '/api/user/' + encodeURIComponent(targetUser) + '/' + type;
       const res  = await authFetch(endpoint);
@@ -11463,7 +11481,7 @@ console.log('[AniLand] Watch Together v2 yuklendi');
     _followTitle.textContent = isOwn ? 'YORUMLARIM' : (targetUser.toUpperCase() + ' — YORUMLAR');
     _followBody.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted);font-size:0.85rem;">Yükleniyor...</div>';
     _followOverlay.classList.add('open');
-    document.body.style.overflow = 'hidden';
+    lockScroll();
     try {
       const res  = await authFetch('/api/user/' + encodeURIComponent(targetUser) + '/comments');
       const data = await res.json();
@@ -11489,7 +11507,7 @@ console.log('[AniLand] Watch Together v2 yuklendi');
 
   function closeFollowModal() {
     _followOverlay.classList.remove('open');
-    document.body.style.overflow = '';
+    unlockScroll();
   }
 
   if (_followClose) _followClose.addEventListener('click', closeFollowModal);
