@@ -1873,6 +1873,67 @@ const server = http.createServer(async (req, res) => {
       return res.end(robots);
     }
 
+    // ─── SEO: anime deep-link sayfaları (/anime/:slug ve /anime/:slug/ep/:n)
+    const _animePathMatch = url.match(/^\/anime\/([^/]+?)(?:\/ep\/(\d+))?$/);
+    if (_animePathMatch) {
+      const _slug = _animePathMatch[1];
+      const _ep   = _animePathMatch[2] ? parseInt(_animePathMatch[2]) : null;
+
+      let html = getHtml(HTML_FILE);
+      if (!html) { json(res, 404, { error: 'Sayfa bulunamadı.' }); return; }
+
+      let _anime = null;
+      try { _anime = await AnimeModel.findOne({ slug: _slug }).lean(); } catch (_) {}
+
+      if (_anime) {
+        const _ptitle = _ep
+          ? `${_anime.title} - Bölüm ${_ep} | AniLand`
+          : `${_anime.title} | AniLand — Anime İzle`;
+        const _rawDesc = (_anime.desc || `${_anime.title} animesini Türkçe altyazılı ücretsiz izle.`).slice(0, 155);
+        const _desc   = _rawDesc.replace(/"/g, '&quot;').replace(/&/g, '&amp;');
+        const _canon  = _ep
+          ? `https://aniland.net/anime/${_slug}/ep/${_ep}`
+          : `https://aniland.net/anime/${_slug}`;
+        const _ogImg  = _anime.coverImage || _anime.bannerImage || 'https://aniland.net/og-image.png';
+        const _te = _ptitle.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+        html = html
+          .replace('<title>AniLand — Türkçe Anime İzleme Platformu</title>',
+            `<title>${_te}</title>`)
+          .replace('content="AniLand — Türkçe Anime İzleme Platformu"',
+            `content="${_te}"`)
+          .replace('content="AniLand, Türkçe altyazılı ve dublajlı anime izleyebileceğin ücretsiz platformdur. Sezon takibi, Top 100 listesi ve çok daha fazlası."',
+            `content="${_desc}"`)
+          .replace(/content="Türkçe altyazılı ve dublajlı anime izleyebileceğin ücretsiz platform\."/g,
+            `content="${_desc}"`)
+          .replace('href="https://aniland.net/"',
+            `href="${_canon}"`)
+          .replace('content="https://aniland.net/"',
+            `content="${_canon}"`)
+          .replace(/content="https:\/\/aniland\.net\/og-image\.png"/g,
+            `content="${_ogImg.replace(/"/g,'&quot;')}"`);
+
+        const _ld = JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'TVSeries',
+          name: _anime.title,
+          description: _rawDesc,
+          image: _ogImg,
+          url: _canon,
+          genre: _anime.genre || undefined,
+          numberOfEpisodes: _anime.eps || undefined,
+        });
+        const _inject = `<script type="application/ld+json">${_ld}</script>\n<script>window.__DEEPLINK__=${JSON.stringify({slug:_slug,ep:_ep})};</script>\n`;
+        html = html.replace('</head>', _inject + '</head>');
+      } else {
+        const _inject = `<script>window.__DEEPLINK__=${JSON.stringify({slug:_slug,ep:_ep})};</script>\n`;
+        html = html.replace('</head>', _inject + '</head>');
+      }
+
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      return res.end(html);
+    }
+
     // ─── SEO: sitemap.xml ─────────────────────────────────────────────────
     if (url === '/sitemap.xml') {
       const BASE = 'https://aniland.net';

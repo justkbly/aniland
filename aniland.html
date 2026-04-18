@@ -3946,7 +3946,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
 
 <!-- MOBİL ALT NAV -->
 <nav class="mobile-bottom-nav" id="mobileBottomNav">
-  <button class="mbn-btn active" id="mbnHome" onclick="window.location.hash=''">
+  <button class="mbn-btn active" id="mbnHome" onclick="history.pushState({}, '', '/'); closeAllOverlays(); renderHomePage();">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
     Ana Sayfa
   </button>
@@ -4238,11 +4238,11 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     document.getElementById('playerSub').textContent = animeData.title + ' · ' + epLabel;
     if (label) label.textContent = epLabel;
 
-    // Update URL to reflect current episode without triggering hashchange
+    // Update URL to reflect current episode
     if (animeData.slug) {
-      const newHash = '#/anime/' + animeData.slug + '/ep/' + epNum;
-      if (window.location.hash !== newHash) {
-        history.replaceState(null, '', newHash);
+      const newPath = '/anime/' + animeData.slug + '/ep/' + epNum;
+      if (window.location.pathname !== newPath) {
+        history.replaceState({anime: animeData.slug, ep: epNum}, '', newPath);
       }
       // Auto-track watching progress
       const animes = getAnimes();
@@ -4808,7 +4808,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     const animes = getAnimes();
     if (animes.length > 0) {
       const a = animes[0];
-      window.location.hash = '#/anime/' + a.slug + '/ep/1';
+      history.pushState({anime: a.slug, ep: 1}, '', '/anime/' + a.slug + '/ep/1');
       openPlayer(a.title, 'Bölüm 1', a.emoji, '', a.epLinks || {}, 1, a.slug, a.eps, a.epTitles || {}, a.epSubs || {}, a.epMeta || {});
     } else {
       openPlayer('Demo Anime', 'Bölüm 1', '🎬', '', {}, 1, '', 1);
@@ -4830,9 +4830,13 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     document.getElementById('driveIframe').src = 'about:blank';
     // Go back to anime detail if we have a slug, otherwise home
     if (animeData.slug) {
-      window.location.hash = '#/anime/' + animeData.slug;
+      const _ba = getAnimes().find(a => a.slug === animeData.slug);
+      history.pushState({anime: animeData.slug}, '', '/anime/' + animeData.slug);
+      if (_ba) openAnimeDetail(_ba);
+      else { history.pushState({}, '', '/'); closeAllOverlays(); }
     } else {
-      window.location.hash = '';
+      history.pushState({}, '', '/');
+      closeAllOverlays();
     }
   });
 
@@ -5576,7 +5580,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     // Mobil drawer kullanıcı kartını gizle
     const drawerUser = document.getElementById('mobileNavUser');
     if (drawerUser) drawerUser.style.display = 'none';
-    window.location.hash = '';
+    history.pushState({}, '', '/');
     renderHomePage();
   }
 
@@ -7509,7 +7513,7 @@ function renderProfileWatchlist(username) {
         const wl2 = getUserWatchlist(getSession()?.username || '');
         const entry = wl2.find(w => w.slug === slug);
         const startEp = (entry && entry.watchedEps && entry.status !== 'completed') ? parseInt(entry.watchedEps) : 1;
-        window.location.hash = '#/anime/' + slug + '/ep/' + startEp;
+        history.pushState({anime: slug, ep: startEp}, '', '/anime/' + slug + '/ep/' + startEp);
         openPlayer(anime.title, 'Bölüm ' + startEp, anime.emoji, '', anime.epLinks || {}, startEp, slug, anime.eps, anime.epTitles || {}, anime.epSubs || {}, anime.epMeta || {});
       }
     });
@@ -9648,7 +9652,7 @@ function navigateToAnime(slug) {
   const animes = getAnimes();
   const anime = animes.find(a => a.slug === slug);
   if (!anime) return;
-  window.location.hash = '#/anime/' + slug;
+  history.pushState({anime: slug}, '', '/anime/' + slug);
   openAnimeDetail(anime);
 }
 
@@ -9713,7 +9717,7 @@ function openAnimeDetail(anime) {
   // ── İzle butonu ──
   document.getElementById('detailPlayBtn').onclick = () => {
     document.getElementById('animeDetailPage').classList.remove('open');
-    window.location.hash = '#/anime/' + anime.slug + '/ep/1';
+    history.pushState({anime: anime.slug, ep: 1}, '', '/anime/' + anime.slug + '/ep/1');
     openPlayer(anime.title, anime.epTitles?.['1'] || 'Bölüm 1', anime.emoji, '', anime.epLinks || {}, 1, anime.slug, anime.eps, anime.epTitles || {}, anime.epSubs || {}, anime.epMeta || {});
   };
 
@@ -9773,7 +9777,7 @@ function openAnimeDetail(anime) {
       btn.addEventListener('click', () => {
         const ep = Number(btn.dataset.ep);
         document.getElementById('animeDetailPage').classList.remove('open');
-        window.location.hash = '#/anime/' + anime.slug + '/ep/' + ep;
+        history.pushState({anime: anime.slug, ep}, '', '/anime/' + anime.slug + '/ep/' + ep);
         openPlayer(anime.title, epTitles[String(ep)] || ('Bölüm ' + ep), anime.emoji, '', epLinks, ep, anime.slug, anime.eps, epTitles, anime.epSubs || {}, anime.epMeta || {});
       });
     });
@@ -9788,13 +9792,27 @@ function openAnimeDetail(anime) {
 document.getElementById('detailBack').addEventListener('click', () => {
   document.getElementById('animeDetailPage').classList.remove('open');
   document.body.style.overflow = '';
-  window.location.hash = '';
+  history.pushState({}, '', '/');
 });
+
+// ===== OVERLAY HELPER =====
+function closeAllOverlays() {
+  document.getElementById('animeDetailPage').classList.remove('open');
+  document.getElementById('adminPage').classList.remove('open');
+  const _pp = document.getElementById('playerPage');
+  if (_pp && _pp.classList.contains('open')) {
+    if (typeof wtLeaveRoom === 'function' && typeof WT !== 'undefined' && WT.isInRoom) wtLeaveRoom();
+    if (typeof wtCleanupPlayerElements === 'function') wtCleanupPlayerElements();
+    _pp.classList.remove('open');
+    document.getElementById('driveIframe').src = 'about:blank';
+  }
+  document.body.style.overflow = '';
+  document.documentElement.style.overflow = '';
+}
 
 // ===== HASH ROUTER =====
 async function handleHash() {
   const hash = window.location.hash;
-  // Anime önbelleği boşsa yükle (deep link veya sayfa yenileme durumu)
   if (_animesCache === null) await fetchAnimes();
 
   if (hash === '#/admin') {
@@ -9803,14 +9821,25 @@ async function handleHash() {
     return;
   }
 
-  // Watch Together oda linki: #/watch/ABCDEF — WT kodu handle eder, burada dur
+  // Watch Together oda linki: #/watch/ABCDEF — WT kodu handle eder
   if (hash.match(/^#\/watch\/[A-Z0-9]{6}$/i)) return;
 
-  // Episode URL: #/anime/slug/ep/N
-  const epMatch = hash.match(/^#\/anime\/([^/]+)\/ep\/(\d+)$/);
+  // Hash boşsa (home'a dönüş) — sadece gerçek path / ise overlayları kapat
+  if (!hash && !window.location.pathname.startsWith('/anime/')) {
+    closeAllOverlays();
+  }
+}
+
+window.addEventListener('hashchange', handleHash);
+
+// ===== POPSTATE ROUTER (gerçek URL geri/ileri) =====
+window.addEventListener('popstate', async () => {
+  if (_animesCache === null) await fetchAnimes();
+  const path = window.location.pathname;
+
+  const epMatch = path.match(/^\/anime\/([^/]+)\/ep\/(\d+)$/);
   if (epMatch) {
-    const slug = epMatch[1];
-    const epNum = parseInt(epMatch[2]) || 1;
+    const slug = epMatch[1], epNum = parseInt(epMatch[2]) || 1;
     const anime = getAnimes().find(a => a.slug === slug);
     if (anime) {
       document.getElementById('animeDetailPage').classList.remove('open');
@@ -9819,34 +9848,17 @@ async function handleHash() {
     return;
   }
 
-  // Anime detail URL: #/anime/slug
-  if (hash.startsWith('#/anime/')) {
-    const slug = hash.replace('#/anime/', '');
-    // Make sure it's not the ep pattern without the /ep/ part
-    if (!slug.includes('/')) {
-      const anime = getAnimes().find(a => a.slug === slug);
-      if (anime) openAnimeDetail(anime);
-    }
+  const detailMatch = path.match(/^\/anime\/([^/]+)$/);
+  if (detailMatch) {
+    const anime = getAnimes().find(a => a.slug === detailMatch[1]);
+    if (anime) openAnimeDetail(anime);
     return;
   }
 
-  // Default: close all overlay pages
-  document.getElementById('animeDetailPage').classList.remove('open');
-  document.getElementById('adminPage').classList.remove('open');
-  const playerPage = document.getElementById('playerPage');
-  if (playerPage && playerPage.classList.contains('open')) {
-    // Watch Together: odadan ayrıl
-    if (typeof wtLeaveRoom === 'function' && typeof WT !== 'undefined' && WT.isInRoom) {
-      wtLeaveRoom();
-    }
-    if (typeof wtCleanupPlayerElements === 'function') wtCleanupPlayerElements();
-    playerPage.classList.remove('open');
-    document.getElementById('driveIframe').src = 'about:blank';
-  }
-  document.body.style.overflow = '';
-}
-
-window.addEventListener('hashchange', handleHash);
+  // Anasayfaya dönüş
+  closeAllOverlays();
+  renderHomePage();
+});
 
 // ===== ADMIN: SITE AYARLARI =====
 const SA_DAYS = ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
@@ -10051,6 +10063,18 @@ async function loadSettings() {
   await loadSettings();
   renderHomePage();
   handleHash();
+  // Sunucu tarafından inject edilen deep link (gerçek URL ile giriş)
+  if (window.__DEEPLINK__) {
+    const { slug, ep } = window.__DEEPLINK__;
+    const _dla = getAnimes().find(a => a.slug === slug);
+    if (_dla) {
+      if (ep) {
+        openPlayer(_dla.title, 'Bölüm ' + ep, _dla.emoji, '', _dla.epLinks || {}, ep, _dla.slug, _dla.eps, _dla.epTitles || {}, _dla.epSubs || {}, _dla.epMeta || {});
+      } else {
+        openAnimeDetail(_dla);
+      }
+    }
+  }
 })();
 // ╔══════════════════════════════════════════════════════════════╗
 // ║            WATCH TOGETHER — İstemci Kodu (v2)               ║
