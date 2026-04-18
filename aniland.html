@@ -3858,6 +3858,14 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     <div class="featured-visual" id="featuredEmoji">⭐</div>
   </div>
 
+  <!-- DEVAM ET — sadece giriş yapılınca ve izleme varsa görünür -->
+  <section class="cw-section" id="cwSection" style="display:none; padding-top:0;">
+    <div class="section-header fade-in">
+      <h2 class="section-title">Kaldığın Yerden Devam Et</h2>
+    </div>
+    <div class="cw-grid fade-in" id="cwGrid"></div>
+  </section>
+
   <!-- TRENDING ANIME GRID -->
   <div class="section-header">
     <h2 class="section-title">Trend Animeler</h2>
@@ -5448,6 +5456,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     img.onerror = () => { navImg.innerHTML = ''; navImg.textContent = user.username.slice(0,1).toUpperCase(); };
     navImg.appendChild(img);
     if (user.role === 'admin') showAdminNavLink();
+    renderContinueWatching();
     // Mobil alt nav profil butonu güncelle
     const mbnLbl = document.getElementById('mbnProfileLabel');
     if (mbnLbl) mbnLbl.textContent = user.username.slice(0,8);
@@ -5966,6 +5975,26 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
       </div>
     </div>
 
+    <!-- GELİŞMİŞ FİLTRELER -->
+    <div class="adv-filters" id="advFilters">
+      <select class="adv-select" id="filterYear">
+        <option value="">Tüm Yıllar</option>
+      </select>
+      <select class="adv-select" id="filterScore">
+        <option value="">Tüm Puanlar</option>
+        <option value="7">7+ Puan</option>
+        <option value="8">8+ Puan</option>
+        <option value="9">9+ Puan</option>
+      </select>
+      <select class="adv-select" id="filterEps">
+        <option value="">Tüm Uzunluklar</option>
+        <option value="film">Film (1 bölüm)</option>
+        <option value="short">Kısa (2–12)</option>
+        <option value="mid">Orta (13–26)</option>
+        <option value="long">Uzun (26+)</option>
+      </select>
+    </div>
+
     <!-- RESULTS HEADER -->
     <div class="results-header" id="resultsHeader" style="display:none;">
       <div class="results-count" id="resultsCount"></div>
@@ -5994,6 +6023,34 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
 
 let searchQuery = '';
 let activeFilter = 'all';
+let advYear = '', advScore = '', advEps = '';
+
+function applyAdvFilters(list) {
+  return list.filter(a => {
+    if (advYear && String(a.year) !== advYear) return false;
+    if (advScore) {
+      const sc = parseFloat(a.score) || parseFloat(getDisplayScore(a.slug)) || 0;
+      if (sc < parseFloat(advScore)) return false;
+    }
+    if (advEps) {
+      const n = parseInt(a.eps) || 0;
+      if (advEps === 'film'  && n !== 1)          return false;
+      if (advEps === 'short' && (n < 2 || n > 12)) return false;
+      if (advEps === 'mid'   && (n < 13 || n > 26)) return false;
+      if (advEps === 'long'  && n <= 26)            return false;
+    }
+    return true;
+  });
+}
+
+function populateYearFilter() {
+  const sel = document.getElementById('filterYear');
+  if (!sel) return;
+  const years = [...new Set(getAnimes().map(a => a.year).filter(Boolean))].sort((a,b) => b-a);
+  const current = sel.value;
+  sel.innerHTML = '<option value="">Tüm Yıllar</option>' +
+    years.map(y => `<option value="${y}"${String(y)===current?' selected':''}>${y}</option>`).join('');
+}
 const searchPage = document.getElementById('searchPage');
 const searchInputBig = document.getElementById('searchInputBig');
 const searchClear = document.getElementById('searchClear');
@@ -6013,11 +6070,26 @@ function closeSearch() {
   if (mbnSearch) mbnSearch.classList.remove('active');
 }
 
+// Gelişmiş filtre eventleri
+['filterYear','filterScore','filterEps'].forEach(id => {
+  document.getElementById(id)?.addEventListener('change', function() {
+    if (id === 'filterYear')  advYear  = this.value;
+    if (id === 'filterScore') advScore = this.value;
+    if (id === 'filterEps')   advEps   = this.value;
+    searchQuery ? handleSearch(searchInputBig.value) : renderEmpty();
+    // resultsHeader'ı her zaman göster filtre seçiliyken
+    if (advYear || advScore || advEps) {
+      resultsHeader.style.display = 'flex';
+      trendingSection.style.display = 'none';
+    }
+  });
+});
+
 function renderEmpty() {
-  // Boşken tüm animeleri göster (arama açıldığında kullanıcı ne var görsün)
-  const all = getAnimes();
-  trendingSection.style.display = all.length === 0 ? 'block' : 'none';
-  resultsHeader.style.display = all.length > 0 ? 'flex' : 'none';
+  const all = applyAdvFilters(getAnimes().filter(a => activeFilter === 'all' || a.genre === activeFilter));
+  const hasAdv = advYear || advScore || advEps || activeFilter !== 'all';
+  trendingSection.style.display = (all.length === 0 || hasAdv) ? 'none' : 'block';
+  resultsHeader.style.display = (all.length > 0 || hasAdv) ? 'flex' : 'none';
   noResults.classList.remove('show');
 
   if (all.length === 0) {
@@ -6070,20 +6142,24 @@ function handleSearch(q) {
   searchQuery = q.trim().toLowerCase();
   searchClear.classList.toggle('visible', q.length > 0);
 
-  if (!searchQuery) { renderEmpty(); return; }
+  if (!searchQuery && activeFilter === 'all' && !advYear && !advScore && !advEps) { renderEmpty(); return; }
 
   trendingSection.style.display = 'none';
   resultsHeader.style.display = 'flex';
 
   const all = getAnimes();
   let filtered = all.filter(a => {
-    const matchQuery = a.title.toLowerCase().includes(searchQuery) ||
-                       (a.altTitle || '').toLowerCase().includes(searchQuery) ||
-                       (a.genre || '').toLowerCase().includes(searchQuery) ||
-                       (a.desc || '').toLowerCase().includes(searchQuery);
-    const matchFilter = activeFilter === 'all' || a.genre === activeFilter;
-    return matchQuery && matchFilter;
+    if (searchQuery) {
+      const matchQuery = a.title.toLowerCase().includes(searchQuery) ||
+                         (a.altTitle || '').toLowerCase().includes(searchQuery) ||
+                         (a.genre || '').toLowerCase().includes(searchQuery) ||
+                         (a.desc || '').toLowerCase().includes(searchQuery);
+      if (!matchQuery) return false;
+    }
+    if (activeFilter !== 'all' && a.genre !== activeFilter) return false;
+    return true;
   });
+  filtered = applyAdvFilters(filtered);
 
   const sort = document.getElementById('sortSelect').value;
   if (sort === 'score') filtered.sort((a,b) => parseFloat(b.score||0) - parseFloat(a.score||0));
@@ -6166,9 +6242,10 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && searchPage.classList.contains('open')) closeSearch();
 });
 
-// Arama sayfası açılınca filter chip'leri tazele
+// Arama sayfası açılınca filter chip'leri ve yıl dropdown'ını tazele
 function openSearch(q) {
   refreshFilterChips();
+  populateYearFilter();
   searchPage.classList.add('open');
   document.body.style.overflow = 'hidden';
   const mbnSearch = document.getElementById('mbnSearch');
@@ -8767,6 +8844,59 @@ document.getElementById('pwChangeBtn').addEventListener('click', async function(
   body.light .detail-meta-chip { color: rgba(14,14,32,0.65); background: rgba(0,0,0,0.06); border-color: rgba(0,0,0,0.1); }
   body.light .detail-ep-btn { background: var(--surface); color: var(--text-sub); }
   body.light .detail-info-card { background: var(--surface); }
+
+  /* ── Öneri grid ── */
+  .detail-similar { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+  .detail-similar-title { font-family: 'Bebas Neue', cursive; font-size: 1.1rem; letter-spacing: 2px; color: var(--text-sub); margin-bottom: 1rem; text-transform: uppercase; }
+  .detail-similar-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+  @media (max-width: 500px) { .detail-similar-grid { grid-template-columns: repeat(2, 1fr); } }
+  .dsc {
+    position: relative; border-radius: 10px; overflow: hidden;
+    aspect-ratio: 2/3; cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .dsc:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+  .dsc img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .dsc-fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
+  .dsc-title { position: absolute; bottom: 0; left: 0; right: 0; padding: 0.5rem 0.6rem; background: linear-gradient(transparent, rgba(0,0,0,0.85)); font-size: 0.78rem; font-weight: 700; color: #fff; line-height: 1.2; }
+</style>
+
+<!-- ── Continue Watching + Gelişmiş Filtre CSS ── -->
+<style>
+  .cw-section { padding-top: 0; }
+  .cw-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 1rem; }
+  @media (max-width: 768px) { .cw-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; } }
+  .cw-card {
+    border-radius: var(--radius); overflow: hidden; position: relative;
+    cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+    background: var(--surface); border: 1px solid var(--border);
+  }
+  .cw-card:hover { transform: translateY(-3px); box-shadow: 0 10px 28px rgba(0,0,0,0.4); }
+  .cw-thumb { width: 100%; aspect-ratio: 16/9; overflow: hidden; position: relative; background: var(--surface2); }
+  .cw-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .cw-thumb .cw-fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; }
+  .cw-play-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.35); opacity: 0; transition: opacity 0.2s; }
+  .cw-card:hover .cw-play-overlay { opacity: 1; }
+  .cw-play-overlay span { width: 36px; height: 36px; background: var(--sakura); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; color: #fff; }
+  .cw-info { padding: 0.6rem 0.75rem 0.75rem; }
+  .cw-title { font-size: 0.88rem; font-weight: 700; color: var(--text); margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cw-ep { font-size: 0.75rem; color: var(--text-sub); margin-bottom: 0.5rem; }
+  .cw-bar { height: 3px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
+  .cw-bar-fill { height: 100%; background: linear-gradient(90deg, var(--sakura), var(--neon)); border-radius: 4px; }
+  body.light .cw-bar { background: rgba(0,0,0,0.1); }
+
+  .adv-filters { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.25rem; align-items: center; }
+  .adv-select {
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+    color: var(--text); border-radius: 8px; padding: 0.4rem 0.75rem;
+    font-family: 'Rajdhani', sans-serif; font-size: 0.85rem; font-weight: 600;
+    cursor: pointer; outline: none; transition: border-color 0.2s;
+    -webkit-appearance: none; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath fill='%235a5a7a' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 0.6rem center; padding-right: 1.8rem;
+  }
+  .adv-select:focus { border-color: rgba(0,212,180,0.4); }
+  body.light .adv-select { background-color: rgba(200,170,215,0.15); border-color: rgba(180,140,180,0.25); color: #2a1a2e; }
 </style>
 
 <div class="anime-detail-page" id="animeDetailPage">
@@ -8807,6 +8937,12 @@ document.getElementById('pwChangeBtn').addEventListener('click', async function(
       <div id="detailEpsSection" style="display:none">
         <div class="detail-eps-title" id="detailEpsTitle">Bölümler</div>
         <div class="detail-ep-grid" id="detailEpGrid"></div>
+      </div>
+
+      <!-- Öneri sistemi -->
+      <div class="detail-similar" id="detailSimilar" style="display:none">
+        <div class="detail-similar-title">Bunları da Beğenebilirsin</div>
+        <div class="detail-similar-grid" id="detailSimilarGrid"></div>
       </div>
     </div>
   </div>
@@ -9594,7 +9730,89 @@ function attachCardListeners(grid) {
   });
 }
 
+// ===== DEVAM ET =====
+function renderContinueWatching() {
+  const section = document.getElementById('cwSection');
+  const grid    = document.getElementById('cwGrid');
+  if (!section || !grid) return;
+  const session = getSession();
+  if (!session) { section.style.display = 'none'; return; }
+
+  const wl = getUserWatchlist(session.username)
+    .filter(w => w.status === 'watching')
+    .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
+    .slice(0, 6);
+
+  if (wl.length === 0) { section.style.display = 'none'; return; }
+  section.style.display = '';
+
+  const animes = getAnimes();
+  grid.innerHTML = wl.map(w => {
+    const anime = animes.find(a => a.slug === w.slug);
+    const totalEps = parseInt(w.totalEps) || 1;
+    const watched  = parseInt(w.watchedEps) || 0;
+    const pct      = Math.min(100, Math.round((watched / totalEps) * 100));
+    const nextEp   = Math.min(watched + 1, totalEps);
+    const thumb    = (anime && anime.coverImage)
+      ? `<img src="${escHtml(anime.coverImage)}" alt="${escHtml(w.title)}">`
+      : `<div class="cw-fallback">${escHtml(w.emoji || '🎬')}</div>`;
+    const bg = `background:linear-gradient(135deg,${escHtml(w.color1||'#1a0a2e')},${escHtml(w.color2||'#2e0a1a')});`;
+    return `<div class="cw-card" data-slug="${escHtml(w.slug)}" data-ep="${nextEp}" style="${bg}">
+      <div class="cw-thumb">${thumb}
+        <div class="cw-play-overlay"><span>▶</span></div>
+      </div>
+      <div class="cw-info">
+        <div class="cw-title">${escHtml(w.title)}</div>
+        <div class="cw-ep">Bölüm ${watched}/${totalEps} — Devam: ${nextEp}</div>
+        <div class="cw-bar"><div class="cw-bar-fill" style="width:${pct}%"></div></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  grid.querySelectorAll('.cw-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const slug  = card.dataset.slug;
+      const ep    = parseInt(card.dataset.ep) || 1;
+      const anime = animes.find(a => a.slug === slug);
+      if (!anime) return;
+      history.pushState({anime: slug, ep}, '', '/anime/' + slug + '/ep/' + ep);
+      openPlayer(anime.title, anime.epTitles?.[String(ep)] || ('Bölüm ' + ep), anime.emoji, '', anime.epLinks || {}, ep, slug, anime.eps, anime.epTitles || {}, anime.epSubs || {}, anime.epMeta || {});
+    });
+  });
+}
+
+// ===== ÖNERİ SİSTEMİ =====
+function renderSimilarAnimes(anime) {
+  const section = document.getElementById('detailSimilar');
+  const grid    = document.getElementById('detailSimilarGrid');
+  if (!section || !grid || !anime.genre) { if (section) section.style.display = 'none'; return; }
+
+  const similar = getAnimes()
+    .filter(a => a.slug !== anime.slug && a.genre === anime.genre)
+    .sort((a, b) => parseFloat(b.score || 0) - parseFloat(a.score || 0))
+    .slice(0, 6);
+
+  if (similar.length === 0) { section.style.display = 'none'; return; }
+  section.style.display = '';
+
+  grid.innerHTML = similar.map(a => {
+    const bg = `background:linear-gradient(135deg,${escHtml(a.color1||'#1a0a2e')},${escHtml(a.color2||'#2e0a1a')});`;
+    const thumb = a.coverImage
+      ? `<img src="${escHtml(a.coverImage)}" alt="${escHtml(a.title)}">`
+      : `<div class="dsc-fallback" style="${bg}">${escHtml(a.emoji||'🎬')}</div>`;
+    return `<div class="dsc" data-slug="${escHtml(a.slug)}" style="${bg}">
+      ${thumb}
+      <div class="dsc-title">${escHtml(a.title)}</div>
+    </div>`;
+  }).join('');
+
+  grid.querySelectorAll('.dsc').forEach(card => {
+    card.addEventListener('click', () => navigateToAnime(card.dataset.slug));
+  });
+}
+
 function renderHomePage() {
+  renderContinueWatching();
   const animes = getAnimes();
   console.debug('[renderHomePage] anime sayısı:', animes.length);
   const emptyHtml = '<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted);"><div style="font-size:3rem;margin-bottom:1rem;">🎌</div><div style="font-size:1.2rem;font-weight:700;margin-bottom:0.4rem;">Henüz anime yok</div><div style="font-size:0.9rem;">Admin panelinden yeni anime ekleyebilirsin.</div></div>';
@@ -9784,6 +10002,8 @@ function openAnimeDetail(anime) {
   } else {
     epsSection.style.display = 'none';
   }
+
+  renderSimilarAnimes(anime);
 
   document.getElementById('animeDetailPage').classList.add('open');
   document.body.style.overflow = 'hidden';
