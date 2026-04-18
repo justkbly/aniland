@@ -1886,32 +1886,29 @@ const server = http.createServer(async (req, res) => {
       try { _anime = await AnimeModel.findOne({ slug: _slug }).lean(); } catch (_) {}
 
       if (_anime) {
-        const _ptitle = _ep
+        const _rawTitle = _ep
           ? `${_anime.title} - Bölüm ${_ep} | AniLand`
           : `${_anime.title} | AniLand — Anime İzle`;
-        const _rawDesc = (_anime.desc || `${_anime.title} animesini Türkçe altyazılı ücretsiz izle.`).slice(0, 155);
-        const _desc   = _rawDesc.replace(/"/g, '&quot;').replace(/&/g, '&amp;');
-        const _canon  = _ep
+        const _rawDesc  = (_anime.desc || `${_anime.title} animesini Türkçe altyazılı ücretsiz izle.`).slice(0, 155);
+        const _canon    = _ep
           ? `https://aniland.net/anime/${_slug}/ep/${_ep}`
           : `https://aniland.net/anime/${_slug}`;
-        const _ogImg  = _anime.coverImage || _anime.bannerImage || 'https://aniland.net/og-image.png';
-        const _te = _ptitle.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        const _ogImg    = _anime.coverImage || _anime.bannerImage || 'https://aniland.net/og-image.png';
 
+        // HTML attribute-safe escape
+        const esc = s => String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        const _title = esc(_rawTitle);
+        const _desc  = esc(_rawDesc);
+        const _img   = esc(_ogImg);
+
+        // Eski generic meta tag'leri sil, sonra anime-specific olanları <head> başına ekle
         html = html
-          .replace('<title>AniLand — Türkçe Anime İzleme Platformu</title>',
-            `<title>${_te}</title>`)
-          .replace('content="AniLand — Türkçe Anime İzleme Platformu"',
-            `content="${_te}"`)
-          .replace('content="AniLand, Türkçe altyazılı ve dublajlı anime izleyebileceğin ücretsiz platformdur. Sezon takibi, Top 100 listesi ve çok daha fazlası."',
-            `content="${_desc}"`)
-          .replace(/content="Türkçe altyazılı ve dublajlı anime izleyebileceğin ücretsiz platform\."/g,
-            `content="${_desc}"`)
-          .replace('href="https://aniland.net/"',
-            `href="${_canon}"`)
-          .replace('content="https://aniland.net/"',
-            `content="${_canon}"`)
-          .replace(/content="https:\/\/aniland\.net\/og-image\.png"/g,
-            `content="${_ogImg.replace(/"/g,'&quot;')}"`);
+          .replace(/<title>[^<]*<\/title>/, '')
+          .replace(/<meta\s+name="description"[^>]*>/gi, '')
+          .replace(/<meta\s+name="keywords"[^>]*>/gi, '')
+          .replace(/<link\s+rel="canonical"[^>]*>/gi, '')
+          .replace(/<meta\s+property="og:[^>]*>/gi, '')
+          .replace(/<meta\s+name="twitter:[^>]*>/gi, '');
 
         const _ld = JSON.stringify({
           '@context': 'https://schema.org',
@@ -1923,14 +1920,38 @@ const server = http.createServer(async (req, res) => {
           genre: _anime.genre || undefined,
           numberOfEpisodes: _anime.eps || undefined,
         });
-        const _inject = `<script type="application/ld+json">${_ld}</script>\n<script>window.__DEEPLINK__=${JSON.stringify({slug:_slug,ep:_ep})};</script>\n`;
-        html = html.replace('</head>', _inject + '</head>');
+
+        const _headInject = [
+          `<title>${_title}</title>`,
+          `<meta name="description" content="${_desc}">`,
+          `<meta name="robots" content="index, follow">`,
+          `<link rel="canonical" href="${esc(_canon)}">`,
+          `<meta property="og:type" content="website">`,
+          `<meta property="og:url" content="${esc(_canon)}">`,
+          `<meta property="og:title" content="${_title}">`,
+          `<meta property="og:description" content="${_desc}">`,
+          `<meta property="og:image" content="${_img}">`,
+          `<meta property="og:locale" content="tr_TR">`,
+          `<meta property="og:site_name" content="AniLand">`,
+          `<meta name="twitter:card" content="summary_large_image">`,
+          `<meta name="twitter:title" content="${_title}">`,
+          `<meta name="twitter:description" content="${_desc}">`,
+          `<meta name="twitter:image" content="${_img}">`,
+          `<script type="application/ld+json">${_ld}</script>`,
+          `<script>window.__DEEPLINK__=${JSON.stringify({slug:_slug,ep:_ep})};</script>`,
+        ].join('\n');
+
+        html = html.replace('<head>', '<head>\n' + _headInject);
       } else {
-        const _inject = `<script>window.__DEEPLINK__=${JSON.stringify({slug:_slug,ep:_ep})};</script>\n`;
-        html = html.replace('</head>', _inject + '</head>');
+        // Anime bulunamadı — generic html sun, deeplink client'ta graceful fail olur
+        const _inject = `<script>window.__DEEPLINK__=${JSON.stringify({slug:_slug,ep:_ep})};</script>`;
+        html = html.replace('<head>', '<head>\n' + _inject);
       }
 
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.writeHead(200, {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-store',
+      });
       return res.end(html);
     }
 
@@ -1946,7 +1967,7 @@ const server = http.createServer(async (req, res) => {
         ...staticPages.map(p => `  <url><loc>${BASE}${p}</loc><lastmod>${today}</lastmod><changefreq>daily</changefreq><priority>${p === '/' ? '1.0' : '0.8'}</priority></url>`),
         ...animes
           .filter(a => a.slug)
-          .map(a => `  <url><loc>${BASE}/anime#/anime/${a.slug}</loc><lastmod>${today}</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>`),
+          .map(a => `  <url><loc>${BASE}/anime/${a.slug}</loc><lastmod>${today}</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>`),
       ].join('\n');
 
       const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urlTags}\n</urlset>`;
