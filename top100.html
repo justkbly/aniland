@@ -3167,7 +3167,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     return '<div class="podium-card '+cls+'">'
       + '<div class="podium-rank">#'+a.rank+'</div>'
       + '<div style="font-size:1.8rem;margin:0.3rem 0;">'+medal+'</div>'
-      + '<div style="font-size:2rem;margin:0.3rem 0;">'+a.emoji+'</div>'
+      + (a.coverImage ? '<div style="width:64px;height:80px;margin:0.3rem auto;border-radius:8px;overflow:hidden;"><img src="'+a.coverImage+'" style="width:100%;height:100%;object-fit:cover;object-position:center top;" alt="'+a.title+'"></div>' : '')
       + '<div class="podium-title">'+a.title+'</div>'
       + '<div class="podium-score">★ '+a.score+'</div>'
       + '<div style="font-size:0.72rem;color:var(--muted);margin-top:0.3rem;">'+a.year+' • '+a.genre+'</div>'
@@ -3181,7 +3181,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
       return '<div class="top-row">'
         + (a.badge ? '<span class="top-badge">'+a.badge+'</span>' : '')
         + '<div class="top-rank '+rankCls+'">#'+a.rank+'</div>'
-        + '<div class="top-thumb" style="background:linear-gradient(135deg,'+a.color1+','+a.color2+')">'+a.emoji+'</div>'
+        + (a.coverImage ? '<div class="top-thumb"><img src="'+a.coverImage+'" style="width:100%;height:100%;object-fit:cover;object-position:center top;border-radius:10px;" alt="'+a.title+'"></div>' : '<div class="top-thumb" style="background:linear-gradient(135deg,'+a.color1+','+a.color2+')"></div>')
         + '<div class="top-info">'
         + '  <div class="top-title">'+a.title+'</div>'
         + '  <div class="top-meta">'
@@ -3244,7 +3244,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
         ep: epCount,
         year: parseInt(a.year) || 0,
         genre: a.genre || 'Diğer',
-        emoji: a.emoji || '🎬',
+        coverImage: a.coverImage || '',
         badge: a.ratingCount >= 5 ? 'HOT' : (epCount === 1 ? 'FİLM' : ''),
         color1: a.color1 || '#1a1a2e',
         color2: a.color2 || '#0a0a1a',
@@ -3681,7 +3681,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
       iframe.src = 'about:blank';
       iframeContainer.style.display = 'none';
       noLinkScreen.style.display = 'flex';
-      document.getElementById('playerEmoji').textContent = animeData.emoji || '🎬';
+      document.getElementById('playerEmoji').innerHTML = animeData.coverImage ? `<img src="${escHtml(animeData.coverImage)}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;" alt="${escHtml(animeData.title||'')}">` : '';
     }
     buildEpGrid();
     // Yorumları bu bölüm için yükle
@@ -3707,11 +3707,11 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     }
   }
 
-  function openPlayer(title, sub, emoji, grad, epLinks, startEp, slug, totalEps) {
+  function openPlayer(title, sub, coverImg, grad, epLinks, startEp, slug, totalEps) {
     document.getElementById('playerTitle').textContent = title;
     document.getElementById('playerAnimeTitle').textContent = title;
     animeData.title = title;
-    animeData.emoji = emoji || '🎬';
+    animeData.coverImage = coverImg || '';
     animeData.slug = slug || '';
     animeData.totalEps = parseInt(totalEps) || 1;
     currentEpLinks = epLinks || {};
@@ -3750,7 +3750,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     if (animes.length > 0) {
       const a = animes[0];
       window.location.hash = '#/anime/' + a.slug + '/ep/1';
-      openPlayer(a.title, 'Bölüm 1', a.emoji, '', a.epLinks || {}, 1, a.slug, a.eps);
+      openPlayer(a.title, 'Bölüm 1', a.coverImage || '', '', a.epLinks || {}, 1, a.slug, a.eps);
     } else {
       openPlayer('Demo Anime', 'Bölüm 1', '🎬', '', {}, 1, '', 1);
     }
@@ -4939,7 +4939,7 @@ function buildResultCard(a, hl) {
   const meta = escHtml((a.eps ? a.eps + ' Bölüm' : '') + (a.year ? ' · ' + a.year : ''));
   return `
     <div class="result-card" style="background:${bg};" data-slug="${escHtml(a.slug)}">
-      <div class="rc-thumb">${escHtml(a.emoji || '🎬')}</div>
+      <div class="rc-thumb">${a.coverImage ? `<img src="${escHtml(a.coverImage)}" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block;" alt="${escHtml(a.title)}">` : ''}</div>
       <div class="rc-base"></div>
       <div class="rc-overlay"></div>
       <div class="rc-genre">${escHtml(a.genre || '')}</div>
@@ -6686,7 +6686,7 @@ async function renderPersonalStats(username) {
     // Ratings given
     const ratedAnimes = Object.entries(ratings).map(([slug, score]) => {
       const a = animes.find(x => x.slug === slug);
-      return { slug, title: a ? a.title : slug, emoji: a ? a.emoji : '🎬', score };
+      return { slug, title: a ? a.title : slug, coverImage: a ? a.coverImage : '', score };
     }).sort((a,b) => b.score - a.score);
     const avgMyRating = ratedAnimes.length ? (ratedAnimes.reduce((s,r) => s + r.score, 0) / ratedAnimes.length).toFixed(1) : '—';
 
@@ -7624,7 +7624,7 @@ function renderAdminTable() {
   animes.forEach((a) => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td class="tbl-emoji">${escHtml(a.emoji) || '🎬'}</td>
+      <td class="tbl-thumb">${a.coverImage ? `<img src="${escHtml(a.coverImage)}" style="width:32px;height:40px;object-fit:cover;border-radius:4px;">` : ''}</td>
       <td><div class="tbl-title">${escHtml(a.title)}</div></td>
       <td class="tbl-genre">${escHtml(a.genre) || '-'}</td>
       <td class="tbl-score">★ ${escHtml(a.score) || '-'}</td>
@@ -7831,7 +7831,7 @@ async function loadAnalytics() {
     // Top rated
     topEl.innerHTML = topRated.length ? topRated.map((a,i) => `
       <div class="analytics-bar-row">
-        <div class="analytics-bar-label">${escHtml(a.emoji||'🎬')} ${escHtml(a.title)}</div>
+        <div class="analytics-bar-label">${escHtml(a.title)}</div>
         <div class="analytics-bar-track"><div class="analytics-bar-fill" style="width:${Math.round(a.avg/5*100)}%;background:linear-gradient(90deg,var(--gold),#e0940a)"></div></div>
         <div class="analytics-bar-val">★${a.avg}</div>
       </div>`).join('') : '<div style="color:var(--muted);font-size:0.85rem;">Henüz puan verilmemiş.</div>';
@@ -7839,7 +7839,7 @@ async function loadAnalytics() {
     const maxC = mostCommented[0] ? mostCommented[0].count : 1;
     commEl.innerHTML = mostCommented.length ? mostCommented.map(a => `
       <div class="analytics-bar-row">
-        <div class="analytics-bar-label">${escHtml(a.emoji||'🎬')} ${escHtml(a.title)}</div>
+        <div class="analytics-bar-label">${escHtml(a.title)}</div>
         <div class="analytics-bar-track"><div class="analytics-bar-fill" style="width:${Math.round(a.count/maxC*100)}%;background:linear-gradient(90deg,var(--sakura),#c84b9e)"></div></div>
         <div class="analytics-bar-val">${a.count}</div>
       </div>`).join('') : '<div style="color:var(--muted);font-size:0.85rem;">Henüz yorum yok.</div>';
@@ -8150,7 +8150,7 @@ function renderHomePage() {
     const offsets = ['hero-card-0', 'hero-card-1', 'hero-card-2'];
     heroContainer.innerHTML = animes.slice(0, 3).map((a, i) => `
       <div class="hero-card ${offsets[i]}" data-slug="${escHtml(a.slug)}" style="cursor:pointer;">
-        <div class="card-thumb" style="background:linear-gradient(135deg,${escHtml(a.color1||'#1a0a2e')},${escHtml(a.color2||'#2e0a1a')});">${escHtml(a.emoji||'🎬')}</div>
+        <div class="card-thumb" style="background:linear-gradient(135deg,${escHtml(a.color1||'#1a0a2e')},${escHtml(a.color2||'#2e0a1a')});">${a.coverImage ? `<img src="${escHtml(a.coverImage)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" alt="${escHtml(a.title)}">` : ''}</div>
         <div class="card-base-overlay"></div>
         ${i < 2 ? `<div class="hero-badge">${badges[i]}</div>` : ''}
         <div class="hero-card-title">${escHtml(a.title)}</div>
@@ -8171,7 +8171,7 @@ function renderHomePage() {
       } else {
         grid.innerHTML = animes.map(a => `
           <div class="anime-card" style="background:linear-gradient(135deg,${escHtml(a.color1)},${escHtml(a.color2)});" data-slug="${escHtml(a.slug)}" role="button" tabindex="0" aria-label="${escHtml(a.title)} animesini izle">
-            <div class="card-thumb" style="background:linear-gradient(135deg,${escHtml(a.color1)},${escHtml(a.color2)});">${escHtml(a.emoji)}</div>
+            <div class="card-thumb" style="background:linear-gradient(135deg,${escHtml(a.color1)},${escHtml(a.color2)});">${a.coverImage ? `<img src="${escHtml(a.coverImage)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" alt="${escHtml(a.title)}">` : ''}</div>
             <div class="card-base-overlay"></div>
             <div class="card-genre">${escHtml(a.genre)}</div>
             <div class="card-score">★ ${escHtml(a.score) || '?'}</div>
