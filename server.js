@@ -356,6 +356,29 @@ async function ensureAdminExists() {
   console.log('[AniLand] Admin kullanıcısı oluşturuldu. Kullanıcı: admin | Şifre: admin123');
 }
 
+// ─── Aktif izleyici takibi (in-memory) ────────────────────────────────────────
+// { slug: { ep: Map<ip, lastSeen> } }
+const viewerMap = new Map();
+const VIEWER_TTL = 2 * 60 * 1000; // 2 dakika
+
+function pingViewer(slug, ep, ip) {
+  if (!slug) return;
+  if (!viewerMap.has(slug)) viewerMap.set(slug, new Map());
+  const key = `${ep}:${ip}`;
+  viewerMap.get(slug).set(key, Date.now());
+}
+
+function getViewerCount(slug) {
+  if (!viewerMap.has(slug)) return 0;
+  const now = Date.now();
+  let count = 0;
+  for (const [k, t] of viewerMap.get(slug)) {
+    if (now - t < VIEWER_TTL) count++;
+    else viewerMap.get(slug).delete(k);
+  }
+  return count;
+}
+
 // ─── Oturum yönetimi (in-memory) ──────────────────────────────────────────────
 const SESSION_TTL = 30 * 24 * 60 * 60 * 1000; // 30 gün
 
@@ -1834,6 +1857,7 @@ const server = http.createServer(async (req, res) => {
   // Dosya servisi: temiz URL → disk dosyası
   const htmlServe = {
     '/':       HTML_FILE,
+    '/admin':  HTML_FILE,
     '/anime':  ANIME_FILE,
     '/sezon':  SEZON_FILE,
     '/takvim': TAKVIM_FILE,
@@ -2078,6 +2102,20 @@ const server = http.createServer(async (req, res) => {
 
   if (url === '/api/profile' && req.method === 'PATCH')
     return routes['PATCH /api/profile'](req, res, {});
+
+  // Aktif izleyici ping/get
+  if (url.startsWith('/api/viewers') && req.method === 'POST') {
+    const body = await readBody(req);
+    let data = {};
+    try { data = JSON.parse(body); } catch {}
+    const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress || 'anon';
+    pingViewer(data.slug, data.ep || 1, ip);
+    return json(res, 200, { ok: true });
+  }
+  if (url.startsWith('/api/viewers/') && req.method === 'GET') {
+    const slug = url.split('/api/viewers/')[1];
+    return json(res, 200, { count: getViewerCount(slug) });
+  }
 
   // Takipçi sistemi: /api/user/:username/follow[ers]
   if (url.match(/^\/api\/user\/([^/]+)\/follow$/) && req.method === 'POST') {

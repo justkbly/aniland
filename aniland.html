@@ -5706,11 +5706,11 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
   function showAdminNavLink() {
     if (document.getElementById('adminNavLink')) return;
     const li = document.createElement('li');
-    li.innerHTML = '<a href="#/admin" id="adminNavLink" style="color:var(--gold);">⚙ Admin</a>';
+    li.innerHTML = '<a href="/admin" id="adminNavLink" style="color:var(--gold);">⚙ Admin</a>';
     li.querySelector('a').addEventListener('click', (e) => { e.preventDefault(); openAdminPanel(); });
     document.querySelector('.nav-links').appendChild(li);
     const mli = document.createElement('li');
-    mli.innerHTML = '<a href="#/admin" style="color:var(--gold);">⚙ Admin Paneli</a>';
+    mli.innerHTML = '<a href="/admin" style="color:var(--gold);">⚙ Admin Paneli</a>';
     mli.querySelector('a').addEventListener('click', (e) => { e.preventDefault(); openAdminPanel(); });
     document.querySelector('.mobile-nav-links').appendChild(mli);
   }
@@ -8692,12 +8692,21 @@ document.getElementById('pwChangeBtn').addEventListener('click', async function(
       <div style="display:flex;gap:0.8rem;flex-wrap:wrap;margin-bottom:1rem;">
         <button class="admin-btn-reset" onclick="downloadBulkTemplate()" style="font-size:0.82rem;">📋 JSON Şablonu İndir</button>
       </div>
+            <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.6rem;flex-wrap:wrap;">
+        <label for="bulkImportFile" style="display:inline-flex;align-items:center;gap:0.5rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:0.45rem 0.9rem;font-size:0.82rem;cursor:pointer;transition:background 0.2s;" onmouseenter="this.style.background='rgba(99,102,241,0.15)'" onmouseleave="this.style.background='rgba(255,255,255,0.06)'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          JSON Dosyası Seç
+        </label>
+        <input type="file" id="bulkImportFile" accept=".json,application/json" style="display:none;">
+        <span id="bulkImportFileName" style="font-size:0.78rem;color:var(--muted);">Dosya seçilmedi</span>
+      </div>
       <div style="position:relative;">
         <textarea id="bulkImportText" class="admin-form-textarea" placeholder='[&#10;  {"title":"Naruto","genre":"Shounen","eps":"220","score":"8.3","year":"2002","color1":"#0a1a00","color2":"#1a2e00","desc":"Naruto hikayesi..."},&#10;  {"title":"One Piece","genre":"Aksiyon","eps":"1000","score":"9.1"}&#10;]' style="min-height:140px;font-family:monospace;font-size:0.82rem;"></textarea>
       </div>
       <div style="display:flex;align-items:center;gap:1rem;margin-top:1rem;flex-wrap:wrap;">
-        <button class="admin-btn-submit" id="bulkImportBtn" onclick="runBulkImport()" style="padding:0.6rem 1.5rem;">⚡ Toplu Ekle</button>
+        <button class="admin-btn-submit" id="bulkImportBtn" onclick="runBulkImport()" style="padding:0.6rem 1.5rem;">Toplu Ekle</button>
         <div id="bulkImportStatus" style="font-size:0.85rem;color:var(--muted);"></div>
+      </div>
       </div>
     </div>
 
@@ -9228,7 +9237,7 @@ async function openAdminPanel() {
   updateStorageSize();
   loadAnalytics();
   loadSiteAyarlariForm();
-  window.location.hash = '#/admin';
+  history.pushState({ admin: true }, '', '/admin');
 }
 
 document.getElementById('adminBack').addEventListener('click', () => {
@@ -9485,6 +9494,18 @@ function downloadBulkTemplate() {
   downloadJSON('bulk-template.json', template);
   showToast('✓ Şablon indirildi!');
 }
+
+document.getElementById('bulkImportFile').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('bulkImportFileName').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    document.getElementById('bulkImportText').value = ev.target.result;
+    document.getElementById('bulkImportStatus').innerHTML = '<span style="color:var(--neon);">✓ Dosya yüklendi — Toplu Ekle butonuna bas.</span>';
+  };
+  reader.readAsText(file, 'UTF-8');
+});
 
 async function runBulkImport() {
   const text = document.getElementById('bulkImportText').value.trim();
@@ -10309,9 +10330,10 @@ function closeAllOverlays() {
 // ===== HASH ROUTER =====
 async function handleHash() {
   const hash = window.location.hash;
+  const path = window.location.pathname;
   if (_animesCache === null) await fetchAnimes();
 
-  if (hash === '#/admin') {
+  if (hash === '#/admin' || path === '/admin') {
     const session = getSession();
     if (session && session.role === 'admin') openAdminPanel();
     return;
