@@ -1753,6 +1753,38 @@
   .action-btn:hover { background: rgba(99,102,241,0.1); border-color: rgba(99,102,241,0.3); color: var(--sakura); }
   .action-btn.liked { background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.4); color: var(--sakura); }
 
+  .viewer-badge {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    font-size: 0.78rem; font-weight: 700; color: var(--neon);
+    background: rgba(0,212,180,0.1); border: 1px solid rgba(0,212,180,0.25);
+    padding: 0.3rem 0.7rem; border-radius: 100px;
+    animation: viewerPulse 3s ease-in-out infinite;
+  }
+  @keyframes viewerPulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(0,212,180,0); }
+    50% { box-shadow: 0 0 0 4px rgba(0,212,180,0.12); }
+  }
+  @keyframes ratingAttract {
+    0% { transform: scale(1); }
+    15% { transform: scale(1.04); box-shadow: 0 0 24px rgba(255,209,102,0.18); }
+    30% { transform: scale(1); }
+    100% { transform: scale(1); }
+  }
+  .rating-section.attract { animation: ratingAttract 1.2s ease forwards; }
+
+  /* Sonraki Bölüm butonu — büyük, belirgin */
+  .next-ep-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.18);
+    border-radius: 10px; padding: 0.7rem 1rem; margin: 0.75rem 0;
+    cursor: pointer; transition: background 0.2s, border-color 0.2s;
+  }
+  .next-ep-bar:hover { background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.35); }
+  .next-ep-bar-label { font-size: 0.75rem; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+  .next-ep-bar-title { font-weight: 700; font-size: 0.95rem; color: var(--text); }
+  .next-ep-bar-arrow { font-size: 1.4rem; color: var(--neon); }
+  .next-ep-bar.hidden { display: none; }
+
   .ep-section { margin-top: 1.2rem; }
   .ep-section-title {
     font-family: 'Bebas Neue', cursive; font-size: 1.2rem;
@@ -1983,19 +2015,21 @@
   /* ===== RATING SECTION ===== */
   .rating-section {
     margin: 1rem 0 0.5rem;
-    padding: 1.2rem;
-    background: rgba(30,30,53,0.5);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 12px;
+    padding: 1.4rem 1.4rem 1.2rem;
+    background: rgba(255,209,102,0.06);
+    border: 1.5px solid rgba(255,209,102,0.22);
+    border-radius: 14px;
     display: flex;
     align-items: center;
     gap: 1.5rem;
     flex-wrap: wrap;
+    box-shadow: 0 0 18px rgba(255,209,102,0.06);
   }
   .rating-title {
     font-family: 'Bebas Neue', cursive;
-    font-size: 1.1rem;
+    font-size: 1.25rem;
     letter-spacing: 2px;
+    color: var(--gold);
     flex-shrink: 0;
   }
   .rating-avg-wrap {
@@ -2022,13 +2056,14 @@
     cursor: pointer;
   }
   .rating-stars .star {
-    color: rgba(255,209,102,0.25);
+    color: rgba(255,209,102,0.45);
+    font-size: 1.8rem;
     transition: color 0.15s, transform 0.15s;
     user-select: none;
   }
   .rating-stars .star:hover,
   .rating-stars .star.hover,
-  .rating-stars .star.active { color: var(--gold); transform: scale(1.15); }
+  .rating-stars .star.active { color: var(--gold); transform: scale(1.2); }
   .rating-hint {
     font-size: 0.78rem;
     color: var(--muted);
@@ -2036,9 +2071,9 @@
     margin-top: -0.5rem;
   }
 
-  body.light .rating-section { background: rgba(240,228,242,0.85); border-color: rgba(180,140,180,0.15); }
-  body.light .rating-title { color: #2a1a2e; }
-  body.light .rating-stars .star { color: rgba(180,140,60,0.25); }
+  body.light .rating-section { background: rgba(255,220,80,0.1); border-color: rgba(180,140,20,0.35); }
+  body.light .rating-title { color: #9a6e00; }
+  body.light .rating-stars .star { color: rgba(180,140,60,0.45); }
   body.light .rating-stars .star:hover,
   body.light .rating-stars .star.hover,
   body.light .rating-stars .star.active { color: #c8900a; }
@@ -3957,6 +3992,14 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
   <div class="anime-grid fade-in" id="newGrid"></div>
 </section>
 
+<!-- SENİN İÇİN -->
+<section id="personalSection" style="display:none; padding-top:0;">
+  <div class="section-header fade-in">
+    <h2 class="section-title">✨ Senin İçin</h2>
+  </div>
+  <div class="anime-grid fade-in" id="personalGrid"></div>
+</section>
+
 <!-- SCHEDULE -->
 <section style="background: rgba(18,18,31,0.4); border-top: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05);">
   <div class="section-header fade-in">
@@ -4105,13 +4148,23 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
         <div class="info-actions">
           <button class="action-btn" id="likeBtn"><span class="ab-icon">♡</span>Beğen</button>
           <button class="action-btn"><span class="ab-icon">＋</span>Liste</button>
-          <button class="action-btn"><span class="ab-icon">↗</span>Paylaş</button>
+          <button class="action-btn" id="shareBtn"><span class="ab-icon">↗</span>Paylaş</button>
+          <span class="viewer-badge" id="viewerBadge" style="display:none;">👁 <span id="viewerCount">0</span> izliyor</span>
         </div>
       </div>
 
       <!-- SUB SELECTOR (bölüm listesi üstü) -->
       <div id="epSubSelector" style="display:none;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.8rem;">
         <span style="font-size:0.75rem;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;white-space:nowrap;">Çeviri:</span>
+      </div>
+
+      <!-- SONRAKİ BÖLÜM BAR -->
+      <div class="next-ep-bar hidden" id="nextEpBar">
+        <div>
+          <div class="next-ep-bar-label">Sıradaki</div>
+          <div class="next-ep-bar-title" id="nextEpBarTitle">Bölüm 2</div>
+        </div>
+        <div class="next-ep-bar-arrow">→</div>
       </div>
 
       <!-- RATING -->
@@ -4133,7 +4186,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
 
       <!-- COMMENTS -->
       <div class="comments-section">
-        <div class="comments-title">💬 Yorumlar</div>
+        <div class="comments-title">💬 <span id="commentEpLabel">Yorumlar</span></div>
         <div class="comment-input-wrap" id="commentInputWrap">
           <div class="comment-avatar" id="commentAvatar">😊</div>
           <input type="text" class="comment-input" id="commentInput" placeholder="Yorum yaz...">
@@ -4306,6 +4359,13 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
   function loadEpisode(epNum) {
     console.debug('[loadEpisode]', epNum, '| url:', currentEpLinks[String(epNum)] || '(yok)', '| başlık:', currentEpTitles[String(epNum)] || '(yok)');
     currentEp = epNum;
+    // Yorum başlığını güncelle
+    const commentEpLabel = document.getElementById('commentEpLabel');
+    if (commentEpLabel) commentEpLabel.textContent = 'Bölüm ' + epNum + ' Yorumları';
+    // Sonraki bölüm bar
+    updateNextEpBar();
+    // Viewer ping
+    if (animeData.slug) startViewerPing(animeData.slug, epNum);
     currentEpThumbnails = (currentEpMeta[String(epNum)] || {}).thumbnails || {};
     window._wtCurrentEp = epNum; // Watch Together senkronizasyonu için
     window._wtLoadEpisode = loadEpisode; // Watch Together dışarıdan çağırabilsin
@@ -4930,6 +4990,59 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     if (currentEp > 1) loadEpisode(currentEp - 1);
   });
 
+  // Sonraki bölüm bar
+  document.getElementById('nextEpBar').addEventListener('click', () => {
+    if (currentEp < animeData.totalEps) loadEpisode(currentEp + 1);
+  });
+
+  function updateNextEpBar() {
+    const bar = document.getElementById('nextEpBar');
+    const titleEl = document.getElementById('nextEpBarTitle');
+    if (!bar) return;
+    const next = currentEp + 1;
+    if (next <= animeData.totalEps) {
+      const epTitle = currentEpTitles[String(next)] || ('Bölüm ' + next);
+      titleEl.textContent = epTitle;
+      bar.classList.remove('hidden');
+    } else {
+      bar.classList.add('hidden');
+    }
+  }
+
+  // Paylaş
+  document.getElementById('shareBtn').addEventListener('click', function() {
+    const url = window.location.href;
+    if (navigator.share) {
+      navigator.share({ title: animeData.title, url });
+    } else {
+      navigator.clipboard.writeText(url).then(() => showToast('🔗 Link kopyalandı!'));
+    }
+  });
+
+  // Viewer ping
+  let _viewerInterval = null;
+  function startViewerPing(slug, ep) {
+    if (_viewerInterval) clearInterval(_viewerInterval);
+    function ping() {
+      fetch('/api/viewers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug, ep }) }).catch(() => {});
+      fetch('/api/viewers/' + encodeURIComponent(slug)).then(r => r.json()).then(d => {
+        const badge = document.getElementById('viewerBadge');
+        const countEl = document.getElementById('viewerCount');
+        if (badge && countEl && d.count > 0) {
+          countEl.textContent = d.count;
+          badge.style.display = '';
+        }
+      }).catch(() => {});
+    }
+    ping();
+    _viewerInterval = setInterval(ping, 60000);
+  }
+  function stopViewerPing() {
+    if (_viewerInterval) { clearInterval(_viewerInterval); _viewerInterval = null; }
+    const badge = document.getElementById('viewerBadge');
+    if (badge) badge.style.display = 'none';
+  }
+
   document.getElementById('iframeFullscreen').addEventListener('click', () => {
     const iframe = document.getElementById('driveIframe');
     if (iframe.requestFullscreen) iframe.requestFullscreen();
@@ -4992,6 +5105,15 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
       else hintEl.textContent = 'Puanını ver (1-5 yıldız)';
     }
     renderStars(myRating || 0);
+    // Attract attention if logged in and hasn't rated yet
+    if (getSession() && !myRating) {
+      const rs = document.getElementById('ratingSection');
+      if (rs) {
+        rs.classList.remove('attract');
+        void rs.offsetWidth;
+        setTimeout(() => rs.classList.add('attract'), 800);
+      }
+    }
   }
 
   function renderStars(myRating) {
@@ -6212,6 +6334,13 @@ function attachResultCardListeners() {
   });
 }
 
+function normalizeTR(s) {
+  return (s || '').toLowerCase()
+    .replace(/İ/g,'i').replace(/I/g,'ı')
+    .replace(/Ğ/g,'ğ').replace(/Ü/g,'ü').replace(/Ş/g,'ş').replace(/Ö/g,'ö').replace(/Ç/g,'ç')
+    .replace(/ı/g,'i').replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ş/g,'s').replace(/ö/g,'o').replace(/ç/g,'c');
+}
+
 function handleSearch(q) {
   searchQuery = q.trim().toLowerCase();
   searchClear.classList.toggle('visible', q.length > 0);
@@ -6224,10 +6353,11 @@ function handleSearch(q) {
   const all = getAnimes();
   let filtered = all.filter(a => {
     if (searchQuery) {
-      const matchQuery = a.title.toLowerCase().includes(searchQuery) ||
-                         (a.altTitle || '').toLowerCase().includes(searchQuery) ||
-                         (a.genre || '').toLowerCase().includes(searchQuery) ||
-                         (a.desc || '').toLowerCase().includes(searchQuery);
+      const nq = normalizeTR(searchQuery);
+      const matchQuery = normalizeTR(a.title).includes(nq) ||
+                         normalizeTR(a.altTitle).includes(nq) ||
+                         normalizeTR(a.genre).includes(nq) ||
+                         normalizeTR(a.desc).includes(nq);
       if (!matchQuery) return false;
     }
     if (activeFilter !== 'all' && a.genre !== activeFilter) return false;
@@ -9934,6 +10064,51 @@ function renderHomePage() {
       attachCardListeners(newGrid);
     }
   }
+
+  renderPersonalizedSection(animes);
+}
+
+function renderPersonalizedSection(animes) {
+  const section = document.getElementById('personalSection');
+  const grid = document.getElementById('personalGrid');
+  if (!section || !grid) return;
+
+  // Build watchlist from localStorage
+  const username = currentUser?.username;
+  const watchlistKey = username ? 'watchlist_' + username : 'watchlist_guest';
+  let watchlist = [];
+  try { watchlist = JSON.parse(localStorage.getItem(watchlistKey) || '[]'); } catch {}
+
+  // Also check CW history
+  const cwKey = username ? 'cw_' + username : null;
+  let cwSlugs = [];
+  try { if (cwKey) cwSlugs = Object.keys(JSON.parse(localStorage.getItem(cwKey) || '{}')); } catch {}
+
+  const seenSlugs = new Set([...watchlist.map(w => w.slug || w), ...cwSlugs]);
+  if (seenSlugs.size === 0) { section.style.display = 'none'; return; }
+
+  // Score genres from watched animes
+  const genreScore = {};
+  for (const slug of seenSlugs) {
+    const a = animes.find(x => x.slug === slug);
+    if (!a || !a.genre) continue;
+    const genres = a.genre.split(/[,\/]/).map(g => g.trim().toLowerCase()).filter(Boolean);
+    genres.forEach(g => { genreScore[g] = (genreScore[g] || 0) + 1; });
+  }
+  if (Object.keys(genreScore).length === 0) { section.style.display = 'none'; return; }
+
+  // Score unseen animes
+  const candidates = animes.filter(a => !seenSlugs.has(a.slug)).map(a => {
+    const genres = (a.genre || '').split(/[,\/]/).map(g => g.trim().toLowerCase()).filter(Boolean);
+    const score = genres.reduce((sum, g) => sum + (genreScore[g] || 0), 0);
+    return { anime: a, score };
+  }).filter(c => c.score > 0).sort((a, b) => b.score - a.score);
+
+  if (candidates.length === 0) { section.style.display = 'none'; return; }
+
+  grid.innerHTML = candidates.slice(0, 6).map(c => makeAnimeCard(c.anime)).join('');
+  attachCardListeners(grid);
+  section.style.display = '';
 }
 
 // ===== ANIME DETAIL PAGE =====
@@ -10096,6 +10271,7 @@ function closeAllOverlays() {
     if (typeof wtCleanupPlayerElements === 'function') wtCleanupPlayerElements();
     _pp.classList.remove('open');
     document.getElementById('driveIframe').src = 'about:blank';
+    if (typeof stopViewerPing === 'function') stopViewerPing();
   }
   document.body.style.overflow = '';
   document.documentElement.style.overflow = '';
