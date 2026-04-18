@@ -7770,7 +7770,10 @@ function renderProfileWatchlist(username) {
 
   function renderSection(title, items) {
     if (!items.length) return '';
+    const _allAnimes = getAnimes();
     const cards = items.map(w => {
+      const _live = _allAnimes.find(a => a.slug === w.slug);
+      const coverImage = (_live && _live.coverImage) || w.coverImage || '';
       const totalEps = parseInt(w.totalEps) || 1;
       const watchedEps = parseInt(w.watchedEps) || 0;
       const pct = totalEps > 0 ? Math.round((watchedEps / totalEps) * 100) : 0;
@@ -7781,7 +7784,7 @@ function renderProfileWatchlist(username) {
           : ('Bölüm ' + watchedEps + '/' + totalEps);
       return `
         <div class="wl-card" style="background:linear-gradient(135deg,${escHtml(w.color1||'#1a0a2e')},${escHtml(w.color2||'#2e0a1a')});${w.status==='planned'?'opacity:0.75;':''}" data-slug="${escHtml(w.slug)}">
-          <div class="wl-thumb">${w.coverImage ? `<img src="${escHtml(w.coverImage)}" style="width:100%;height:100%;object-fit:cover;display:block;" alt="">` : ''}</div>
+          <div class="wl-thumb">${coverImage ? `<img src="${escHtml(coverImage)}" style="width:100%;height:100%;object-fit:cover;display:block;" alt="">` : ''}</div>
           <div class="wl-base"></div>
           <button class="wl-remove" data-slug="${escHtml(w.slug)}">✕</button>
           <div class="wl-info">
@@ -10110,7 +10113,8 @@ function renderPersonalizedSection(animes) {
   if (!section || !grid) return;
 
   // Build watchlist from localStorage
-  const username = currentUser?.username;
+  const session = typeof getSession === 'function' ? getSession() : null;
+  const username = session?.username;
   const watchlistKey = username ? 'watchlist_' + username : 'watchlist_guest';
   let watchlist = [];
   try { watchlist = JSON.parse(localStorage.getItem(watchlistKey) || '[]'); } catch {}
