@@ -3679,6 +3679,20 @@ body.light .wt-toast { background: rgba(240,228,242,0.97); border-color: rgba(0,
 .anime-card:nth-child(7)  { animation-delay: 0.35s; }
 .anime-card:nth-child(8)  { animation-delay: 0.40s; }
 
+/* ===== SKELETON LOADING ===== */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.skeleton-card {
+  border-radius: 10px;
+  background: rgba(255,255,255,0.05);
+  background-image: linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.10) 40%, rgba(255,255,255,0.03) 80%);
+  background-size: 400px 100%;
+  animation: shimmer 1.4s infinite linear;
+  flex-shrink: 0;
+}
+
 /* ===== TOAST ENHANCE ===== */
 .toast, .wt-toast {
   animation: toastIn 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards;
@@ -4180,6 +4194,20 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
         <span style="font-size:0.75rem;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;white-space:nowrap;">Çeviri:</span>
       </div>
 
+      <!-- OTO OYNAT SAYACI -->
+      <div id="autoNextOverlay" style="display:none;position:absolute;bottom:80px;right:16px;z-index:30;background:rgba(10,10,20,0.88);backdrop-filter:blur(10px);border:1px solid rgba(130,133,255,0.25);border-radius:12px;padding:14px 18px;min-width:210px;text-align:center;">
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:6px;">Sıradaki bölüm</div>
+        <div id="autoNextTitle" style="font-size:0.92rem;font-weight:600;margin-bottom:10px;"></div>
+        <div style="height:3px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;margin-bottom:10px;">
+          <div id="autoNextProgress" style="height:100%;background:var(--neon);width:0%;transition:width 1s linear;border-radius:2px;"></div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:center;">
+          <button onclick="cancelAutoNext()" style="padding:5px 14px;border-radius:7px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--muted);font-size:0.8rem;cursor:pointer;">İptal</button>
+          <button onclick="doAutoNext()" style="padding:5px 14px;border-radius:7px;border:none;background:var(--neon);color:#fff;font-size:0.8rem;cursor:pointer;font-weight:600;">Şimdi Oynat</button>
+        </div>
+        <div id="autoNextCount" style="font-size:0.72rem;color:var(--muted);margin-top:6px;"></div>
+      </div>
+
       <!-- SONRAKİ BÖLÜM BAR -->
       <div class="next-ep-bar hidden" id="nextEpBar">
         <div class="next-ep-bar-icon">
@@ -4385,6 +4413,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
 
   function loadEpisode(epNum) {
     console.debug('[loadEpisode]', epNum, '| url:', currentEpLinks[String(epNum)] || '(yok)', '| başlık:', currentEpTitles[String(epNum)] || '(yok)');
+    if (typeof cancelAutoNext === 'function') cancelAutoNext();
     currentEp = epNum;
     // Yorum başlığını güncelle
     const commentEpLabel = document.getElementById('commentEpLabel');
@@ -5033,6 +5062,54 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
       bar.classList.add('hidden');
     }
   }
+
+  // ===== AUTO-PLAY NEXT EPISODE =====
+  let _autoNextTimer = null;
+  let _autoNextSecs = 0;
+  let _autoNextInterval = null;
+
+  function startAutoNext() {
+    const next = currentEp + 1;
+    if (next > animeData.totalEps) return;
+    const prefEl = document.getElementById('prefAutoNext');
+    if (prefEl && !prefEl.checked) return;
+    const overlay = document.getElementById('autoNextOverlay');
+    if (!overlay) return;
+    const epTitle = currentEpTitles[String(next)] || ('Bölüm ' + next);
+    document.getElementById('autoNextTitle').textContent = epTitle;
+    _autoNextSecs = 8;
+    overlay.style.display = 'block';
+    document.getElementById('autoNextProgress').style.transition = 'none';
+    document.getElementById('autoNextProgress').style.width = '0%';
+    requestAnimationFrame(() => {
+      document.getElementById('autoNextProgress').style.transition = 'width ' + _autoNextSecs + 's linear';
+      document.getElementById('autoNextProgress').style.width = '100%';
+    });
+    document.getElementById('autoNextCount').textContent = _autoNextSecs + ' saniye içinde başlıyor...';
+    _autoNextInterval = setInterval(() => {
+      _autoNextSecs--;
+      const el = document.getElementById('autoNextCount');
+      if (el) el.textContent = _autoNextSecs + ' saniye içinde başlıyor...';
+      if (_autoNextSecs <= 0) { clearInterval(_autoNextInterval); doAutoNext(); }
+    }, 1000);
+  }
+
+  window.doAutoNext = function() {
+    cancelAutoNext();
+    if (currentEp < animeData.totalEps) loadEpisode(currentEp + 1);
+  };
+
+  window.cancelAutoNext = function() {
+    clearInterval(_autoNextInterval);
+    clearTimeout(_autoNextTimer);
+    const overlay = document.getElementById('autoNextOverlay');
+    if (overlay) overlay.style.display = 'none';
+  };
+
+  // Trigger auto-next when iframe message signals video ended (from embed) or via manual trigger
+  window.addEventListener('message', function(e) {
+    if (e.data === 'videoEnded' || e.data?.type === 'ended') startAutoNext();
+  });
 
   // Paylaş
   document.getElementById('shareBtn').addEventListener('click', function() {
@@ -6192,7 +6269,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     <!-- FILTERS -->
     <div class="search-filters" id="searchFilters">
       <div class="filter-chip on" data-filter="all">Tümü</div>
-      <div class="filter-chip" data-filter="Aksiyon">⚔️ Aksiyon</div>
+      <div class="filter-chip" data-filter="Aksiyon">Aksiyon</div>
       <div class="filter-chip" data-filter="Fantezi">Fantezi</div>
       <div class="filter-chip" data-filter="Romantik">Romantik</div>
       <div class="filter-chip" data-filter="Komedi">Komedi</div>
@@ -6209,7 +6286,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
         <span class="trending-tag" data-q="Demon Slayer">Demon Slayer</span>
         <span class="trending-tag" data-q="Jujutsu Kaisen">Jujutsu Kaisen</span>
         <span class="trending-tag" data-q="One Piece">One Piece</span>
-        <span class="trending-tag" data-q="Blue Lock">⚽ Blue Lock</span>
+        <span class="trending-tag" data-q="Blue Lock">Blue Lock</span>
         <span class="trending-tag" data-q="Solo Leveling">Solo Leveling</span>
         <span class="trending-tag" data-q="Attack on Titan">Attack on Titan</span>
         <span class="trending-tag" data-q="Chainsaw Man">Chainsaw Man</span>
@@ -7559,6 +7636,10 @@ function _buildPublicProfileHTML(p) {
             <span class="settings-val" id="settingsEmail">—</span>
           </div>
           <div class="settings-row">
+            <span class="settings-label">Profil Fotoğrafı</span>
+            <button onclick="document.getElementById('avatarEditDot').click()" style="padding:5px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:var(--fg);font-size:0.8rem;cursor:pointer;">Değiştir</button>
+          </div>
+          <div class="settings-row">
             <span class="settings-label">Üyelik</span>
             <span class="settings-val" id="settingsMembership" style="color:var(--neon);">Üye</span>
           </div>
@@ -7599,8 +7680,8 @@ function _buildPublicProfileHTML(p) {
             <span class="settings-val">Türkçe Altyazı</span>
           </div>
           <div class="settings-row">
-            <span class="settings-label">Otomatik Oynat</span>
-            <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+            <span class="settings-label">Otomatik Sonraki Bölüm</span>
+            <label class="toggle"><input type="checkbox" id="prefAutoNext" checked><span class="toggle-slider"></span></label>
           </div>
           <div class="settings-row">
             <span class="settings-label">Atla (OP/ED)</span>
@@ -10201,6 +10282,7 @@ function getDisplayScore(slug) {
 }
 
 function openAnimeDetail(anime) {
+  document.title = (anime.title || 'Anime') + ' — AniLand';
   const c1 = anime.color1 || '#1a0a2e';
   const c2 = anime.color2 || '#2e0a1a';
 
@@ -10332,6 +10414,7 @@ document.getElementById('detailBack').addEventListener('click', () => {
 
 // ===== OVERLAY HELPER =====
 function closeAllOverlays() {
+  document.title = 'AniLand';
   document.getElementById('animeDetailPage').classList.remove('open');
   document.getElementById('adminPage').classList.remove('open');
   const _pp = document.getElementById('playerPage');
@@ -10595,6 +10678,10 @@ async function loadSettings() {
     else if (!getToken()) { document.getElementById('navLoginBtn').style.display = ''; }
   } catch {}
   await restoreSession();
+  // Show skeleton cards while animes load
+  const _skEl = (id, n, h) => { const g = document.getElementById(id); if (g) g.innerHTML = Array(n).fill(`<div class="skeleton-card" style="height:${h}px;min-width:130px;"></div>`).join(''); };
+  _skEl('trendGrid', 8, 190);
+  _skEl('newGrid', 6, 190);
   await fetchAnimes();
   await loadSettings();
   renderHomePage();
