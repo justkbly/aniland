@@ -9317,7 +9317,7 @@ async function openAdminPanel() {
   const session = getSession();
   if (!session || session.role !== 'admin') { alert('Bu sayfaya erişim yetkiniz yok.'); return; }
   document.getElementById('adminPage').classList.add('open');
-  lockScroll();
+  document.body.style.overflow = 'hidden';
   await fetchAnimes(); // Admin paneli açılırken taze veri çek
   renderAdminTable();
   updateAdminStats();
@@ -9329,7 +9329,7 @@ async function openAdminPanel() {
 
 document.getElementById('adminBack').addEventListener('click', () => {
   document.getElementById('adminPage').classList.remove('open');
-  unlockScroll();
+  document.body.style.overflow = '';
   window.location.hash = '';
   renderHomePage();
 });
@@ -10390,13 +10390,13 @@ function openAnimeDetail(anime) {
   renderSimilarAnimes(anime);
 
   document.getElementById('animeDetailPage').classList.add('open');
-  lockScroll();
+  document.body.style.overflow = 'hidden';
 }
 
 document.getElementById('detailBack').addEventListener('click', () => {
   document.title = 'AniLand';
   document.getElementById('animeDetailPage').classList.remove('open');
-  unlockScroll();
+  document.body.style.overflow = '';
   history.pushState({}, '', '/');
 });
 
