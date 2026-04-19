@@ -4183,7 +4183,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
         </div>
         <div class="info-actions">
           <button class="action-btn" id="likeBtn"><span class="ab-icon">♡</span>Beğen</button>
-          <button class="action-btn"><span class="ab-icon">＋</span>Liste</button>
+          <button class="action-btn" id="addToListBtn"><span class="ab-icon">＋</span>Liste</button>
           <button class="action-btn" id="shareBtn"><span class="ab-icon">↗</span>Paylaş</button>
           <span class="viewer-badge" id="viewerBadge" style="display:none;"><span id="viewerCount">0</span> izliyor</span>
         </div>
@@ -4977,9 +4977,19 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     }
     document.querySelectorAll('.sidebar-card').forEach(c => c.classList.remove('active'));
     playerPage.classList.add('open');
-    lockScroll();
+    document.body.style.overflow = 'hidden';
     buildEpGrid();
     loadEpisode(currentEp);
+    // Liste butonunu güncelle
+    (function() {
+      const listBtn = document.getElementById('addToListBtn');
+      if (!listBtn) return;
+      const session = getSession();
+      const inList = session ? getUserWatchlist(session.username).some(w => w.slug === slug) : false;
+      listBtn.querySelector('.ab-icon').textContent = inList ? '✓' : '＋';
+      const tn = Array.from(listBtn.childNodes).find(n => n.nodeType === Node.TEXT_NODE);
+      if (tn) tn.textContent = inList ? 'Listede' : 'Liste';
+    })();
     // Watch Together elementlerini enjekte et (tanımlandıktan sonra çağrılır)
     if (typeof wtInjectPlayerElements === 'function') {
       setTimeout(wtInjectPlayerElements, 150);
@@ -5019,7 +5029,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     }
     if (typeof wtCleanupPlayerElements === 'function') wtCleanupPlayerElements();
     playerPage.classList.remove('open');
-    unlockScroll();
+    document.body.style.overflow = '';
     // Video ve iframe durdur
     const _vid = document.getElementById('html5VideoPlayer');
     if (_vid) { _vid.pause(); _vid.src = ''; }
@@ -5158,6 +5168,38 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     // Son text node'u bul ve güncelle (childNodes[1] whitespace'e duyarlı olduğundan güvensiz)
     const textNode = Array.from(this.childNodes).find(n => n.nodeType === Node.TEXT_NODE);
     if (textNode) textNode.textContent = liked ? 'Beğenildi' : 'Beğen';
+  });
+
+  document.getElementById('addToListBtn').addEventListener('click', function() {
+    const session = getSession();
+    if (!session) { showToast('Listeye eklemek için giriş yapmalısın.'); return; }
+    const animes = getAnimes();
+    const anime = animes.find(a => a.slug === animeData.slug);
+    if (!anime) { showToast('Anime bulunamadı.'); return; }
+    const wl = getUserWatchlist(session.username);
+    const existing = wl.find(w => w.slug === anime.slug);
+    if (existing) {
+      showToast('Bu anime zaten listende! ✓');
+      return;
+    }
+    const totalEps = parseInt(anime.eps) || 1;
+    wl.push({
+      slug: anime.slug,
+      title: anime.title,
+      emoji: anime.emoji || '',
+      color1: anime.color1 || '#1a0a2e',
+      color2: anime.color2 || '#2e0a1a',
+      totalEps: String(totalEps),
+      watchedEps: '0',
+      status: 'planned',
+      addedAt: Date.now(),
+      updatedAt: Date.now()
+    });
+    saveUserWatchlist(session.username, wl);
+    this.querySelector('.ab-icon').textContent = '✓';
+    const textNode = Array.from(this.childNodes).find(n => n.nodeType === Node.TEXT_NODE);
+    if (textNode) textNode.textContent = 'Listede';
+    showToast(anime.title + ' listeye eklendi! ✓');
   });
 
   // Init episode grid on load (empty until openPlayer is called)
@@ -9330,7 +9372,7 @@ async function openAdminPanel() {
   const session = getSession();
   if (!session || session.role !== 'admin') { alert('Bu sayfaya erişim yetkiniz yok.'); return; }
   document.getElementById('adminPage').classList.add('open');
-  lockScroll();
+  document.body.style.overflow = 'hidden';
   await fetchAnimes(); // Admin paneli açılırken taze veri çek
   renderAdminTable();
   updateAdminStats();
@@ -9342,7 +9384,7 @@ async function openAdminPanel() {
 
 document.getElementById('adminBack').addEventListener('click', () => {
   document.getElementById('adminPage').classList.remove('open');
-  unlockScroll();
+  document.body.style.overflow = '';
   window.location.hash = '';
   renderHomePage();
 });
@@ -10426,7 +10468,10 @@ function closeAllOverlays() {
     document.getElementById('driveIframe').src = 'about:blank';
     if (typeof stopViewerPing === 'function') stopViewerPing();
   }
-  unlockScroll();
+  document.body.style.overflow = '';
+  document.body.style.position = '';
+  document.body.style.top = '';
+  document.body.style.width = '';
 }
 
 // ===== HASH ROUTER =====
