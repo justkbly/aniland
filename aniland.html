@@ -6424,7 +6424,7 @@ const resultsHeader = document.getElementById('resultsHeader');
 
 function closeSearch() {
   searchPage.classList.remove('open');
-  unlockScroll();
+  document.body.style.overflow = '';
   searchInputBig.value = '';
   searchQuery = '';
   searchClear.classList.remove('visible');
@@ -6618,7 +6618,7 @@ function openSearch(q) {
   refreshFilterChips();
   populateYearFilter();
   searchPage.classList.add('open');
-  lockScroll();
+  document.body.style.overflow = 'hidden';
   const mbnSearch = document.getElementById('mbnSearch');
   if (mbnSearch) mbnSearch.classList.add('active');
   setTimeout(() => searchInputBig.focus(), 100);
@@ -7012,7 +7012,7 @@ function openPublicProfile(username) {
 
 function closePubProfile(goBack) {
   pubProfilePage.classList.remove('open');
-  unlockScroll();
+  document.body.style.overflow = '';
   if (goBack !== false) window.history.back();
 }
 
@@ -7020,7 +7020,7 @@ document.getElementById('pubProfileBack').addEventListener('click', () => closeP
 
 async function _renderPublicProfile(username) {
   pubProfilePage.classList.add('open');
-  lockScroll();
+  document.body.style.overflow = 'hidden';
   document.getElementById('pubProfileTopbarTitle').textContent = '@' + username;
   document.getElementById('pubProfileContent').innerHTML = `
     <div class="pub-profile-loading">
@@ -10445,13 +10445,13 @@ function openAnimeDetail(anime) {
   renderSimilarAnimes(anime);
 
   document.getElementById('animeDetailPage').classList.add('open');
-  lockScroll();
+  document.body.style.overflow = 'hidden';
 }
 
 document.getElementById('detailBack').addEventListener('click', () => {
   document.title = 'AniLand';
   document.getElementById('animeDetailPage').classList.remove('open');
-  unlockScroll();
+  document.body.style.overflow = '';
   history.pushState({}, '', '/');
 });
 
@@ -10469,9 +10469,6 @@ function closeAllOverlays() {
     if (typeof stopViewerPing === 'function') stopViewerPing();
   }
   document.body.style.overflow = '';
-  document.body.style.position = '';
-  document.body.style.top = '';
-  document.body.style.width = '';
 }
 
 // ===== HASH ROUTER =====
