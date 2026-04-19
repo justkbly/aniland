@@ -128,20 +128,56 @@ const TOP100_FILE   = path.join(__dirname, 'top100.html');
 // örn: ALLOWED_ORIGIN=https://aniland.com node server.js
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || '*';
 
-// ─── HTML önbelleği (bir kez oku, bellekte tut) ──────────────────────────────
-const _htmlCaches = {};
-const _htmlMtimes = {};
-function getHtml(filePath) {
-  if (!fs.existsSync(filePath)) return null;
-  try {
-    const mtime = fs.statSync(filePath).mtimeMs;
-    if (!_htmlCaches[filePath] || _htmlMtimes[filePath] !== mtime) {
-      _htmlCaches[filePath] = fs.readFileSync(filePath, 'utf8');
-      _htmlMtimes[filePath] = mtime;
-      if (_htmlMtimes[filePath]) console.log(`[AniLand] 🔄 HTML yenilendi: ${path.basename(filePath)}`);
-    }
-  } catch { return null; }
+// ─── HTML CDN önbelleği ───────────────────────────────────────────────────────
+const CDN_BASE = process.env.CDN_BASE || 'https://cdn.aniland.net';
+const CDN_HTML_TTL = 5 * 60 * 1000; // 5 dakika cache
+
+const HTML_CDN_MAP = {
+  [HTML_FILE]:   '/aniland.html',
+  [ANIME_FILE]:  '/anime.html',
+  [SEZON_FILE]:  '/sezon.html',
+  [TAKVIM_FILE]: '/takvim.html',
+  [TOP100_FILE]: '/top100.html',
+};
+
+const _htmlCaches  = {};
+const _htmlFetchAt = {};
+
+async function fetchHtmlFromCDN(filePath) {
+  const cdnPath = HTML_CDN_MAP[filePath];
+  if (!cdnPath) return null;
+  const url = CDN_BASE + cdnPath + '?_=' + Date.now();
+  return new Promise((resolve) => {
+    https.get(url, (res) => {
+      const chunks = [];
+      res.on('data', c => chunks.push(c));
+      res.on('end', () => {
+        const html = Buffer.concat(chunks).toString('utf8');
+        _htmlCaches[filePath]  = html;
+        _htmlFetchAt[filePath] = Date.now();
+        console.log(`[AniLand] 🔄 HTML CDN'den alındı: ${path.basename(filePath)}`);
+        resolve(html);
+      });
+    }).on('error', (err) => {
+      console.error(`[AniLand] ❌ HTML CDN hatası (${path.basename(filePath)}):`, err.message);
+      resolve(_htmlCaches[filePath] || null); // stale cache varsa kullan
+    });
+  });
+}
+
+async function getHtml(filePath) {
+  const now = Date.now();
+  const age = now - (_htmlFetchAt[filePath] || 0);
+  if (!_htmlCaches[filePath] || age > CDN_HTML_TTL) {
+    return await fetchHtmlFromCDN(filePath);
+  }
   return _htmlCaches[filePath];
+}
+
+async function prefetchAllHtml() {
+  console.log('[AniLand] HTML dosyaları CDN\'den prefetch ediliyor...');
+  await Promise.all(Object.keys(HTML_CDN_MAP).map(fetchHtmlFromCDN));
+  console.log('[AniLand] ✅ Tüm HTML\'ler CDN\'den alındı.');
 }
 
 // ─── Basit Async Mutex ───────────────────────────────────────────────────────
@@ -1903,7 +1939,7 @@ const server = http.createServer(async (req, res) => {
       return res.end();
     }
     if (url in htmlServe) {
-      const html = getHtml(htmlServe[url]);
+      const html = await getHtml(htmlServe[url]);
       if (!html) { json(res, 404, { error: 'Sayfa bulunamadı.' }); return; }
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       return res.end(html);
@@ -1927,7 +1963,7 @@ const server = http.createServer(async (req, res) => {
       const _slug = _animePathMatch[1];
       const _ep   = _animePathMatch[2] ? parseInt(_animePathMatch[2]) : null;
 
-      let html = getHtml(HTML_FILE);
+      let html = await getHtml(HTML_FILE);
       if (!html) { json(res, 404, { error: 'Sayfa bulunamadı.' }); return; }
 
       let _anime = null;
@@ -2183,7 +2219,7 @@ const server = http.createServer(async (req, res) => {
 
   // Kullanıcı profil URL'i: /u/:username  (SPA route)
   if (url.match(/^\/u\/([a-zA-Z0-9_]+)$/) && req.method === 'GET') {
-    const html = getHtml(HTML_FILE);
+    const html = await getHtml(HTML_FILE);
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     return res.end(html);
   }
@@ -2288,9 +2324,8 @@ if (WebSocketServer) {
 
 // ─── Başlat ───────────────────────────────────────────────────────────────────
 async function syncAnimesFromCDN() {
-  if (fs.existsSync(ANIMES_FILE) && fs.statSync(ANIMES_FILE).size > 100) return;
   try {
-    console.log('[AniLand] animes.json bulunamadı, CDN\'den çekiliyor...');
+    console.log('[AniLand] animes.json CDN\'den çekiliyor...');
     const res = await new Promise((resolve, reject) => {
       https.get('https://cdn.aniland.net/animes.json', r => resolve(r)).on('error', reject);
     });
@@ -2307,6 +2342,7 @@ async function startServer() {
   await connectDB();
   await ensureAdminExists();
   await syncAnimesFromCDN();
+  await prefetchAllHtml();
   server.listen(PORT, "0.0.0.0", () => {
     console.log(`\n✅ AniLand backend çalışıyor → Port: ${PORT}`);
     console.log(`🌐 CORS origin: ${ALLOWED_ORIGIN}\n`);
