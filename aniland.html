@@ -4010,7 +4010,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
 <section style="padding-top: 0;">
   <div class="section-header fade-in">
     <h2 class="section-title">Yeni Eklendi</h2>
-    <a href="#" class="see-all">Tümünü Gör →</a>
+    <a href="#" class="see-all" id="newSeeAll">Tümünü Gör →</a>
   </div>
   <div class="anime-grid fade-in" id="newGrid"></div>
 </section>
@@ -6576,6 +6576,36 @@ function openSearch(q) {
 }
 
 // After login success → modal kapanıyor, applySession zaten navbar'ı güncelledi
+
+// "Yeni Eklendi → Tümünü Gör" — son 1 hafta içinde eklenenler
+document.getElementById('newSeeAll').addEventListener('click', function(e) {
+  e.preventDefault();
+  const ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
+  const cutoff = Date.now() - ONE_WEEK;
+  const recent = getAnimes().filter(a => (a.addedAt || 0) >= cutoff)
+    .sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
+
+  openSearch('');
+  searchInputBig.value = '';
+  searchQuery = '';
+  searchClear.classList.remove('visible');
+  trendingSection.style.display = 'none';
+  resultsHeader.style.display = 'flex';
+  noResults.classList.remove('show');
+
+  if (recent.length === 0) {
+    searchGrid.innerHTML = '';
+    noResults.classList.add('show');
+    document.getElementById('noResultsSub').textContent = 'Son 1 haftada eklenen anime bulunamadı.';
+    document.getElementById('resultsCount').innerHTML = '<span>0</span> sonuç: "<strong>Son 1 Hafta</strong>"';
+    return;
+  }
+
+  document.getElementById('resultsCount').innerHTML =
+    `<span>${recent.length}</span> sonuç: "<strong>Son 1 Haftada Eklenenler</strong>"`;
+  searchGrid.innerHTML = recent.map(a => buildResultCard(a, '')).join('');
+  attachResultCardListeners();
+});
 </script>
 
 <!-- ===== PUBLIC PROFILE PAGE ===== -->
@@ -10196,7 +10226,7 @@ function renderHomePage() {
     if (animes.length === 0) { newGrid.innerHTML = emptyHtml; }
     else {
       const byDate = animes.slice().sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
-      newGrid.innerHTML = byDate.slice(0, 6).map(makeAnimeCard).join('');
+      newGrid.innerHTML = byDate.slice(0, 8).map(makeAnimeCard).join('');
       attachCardListeners(newGrid);
     }
   }
@@ -10690,7 +10720,7 @@ async function loadSettings() {
   // Show skeleton cards while animes load
   const _skEl = (id, n, h) => { const g = document.getElementById(id); if (g) g.innerHTML = Array(n).fill(`<div class="skeleton-card" style="height:${h}px;min-width:130px;"></div>`).join(''); };
   _skEl('trendGrid', 8, 190);
-  _skEl('newGrid', 6, 190);
+  _skEl('newGrid', 8, 190);
   await fetchAnimes();
   await loadSettings();
   renderHomePage();
