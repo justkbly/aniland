@@ -5178,27 +5178,18 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     if (!anime) { showToast('Anime bulunamadı.'); return; }
     const wl = getUserWatchlist(session.username);
     const existing = wl.find(w => w.slug === anime.slug);
-    if (existing) {
-      showToast('Bu anime zaten listende! ✓');
-      return;
-    }
+    if (existing) { showToast('Bu anime zaten listende! ✓'); return; }
     const totalEps = parseInt(anime.eps) || 1;
     wl.push({
-      slug: anime.slug,
-      title: anime.title,
-      emoji: anime.emoji || '',
-      color1: anime.color1 || '#1a0a2e',
-      color2: anime.color2 || '#2e0a1a',
-      totalEps: String(totalEps),
-      watchedEps: '0',
-      status: 'planned',
-      addedAt: Date.now(),
-      updatedAt: Date.now()
+      slug: anime.slug, title: anime.title, emoji: anime.emoji || '',
+      color1: anime.color1 || '#1a0a2e', color2: anime.color2 || '#2e0a1a',
+      totalEps: String(totalEps), watchedEps: '0', status: 'planned',
+      addedAt: Date.now(), updatedAt: Date.now()
     });
     saveUserWatchlist(session.username, wl);
     this.querySelector('.ab-icon').textContent = '✓';
-    const textNode = Array.from(this.childNodes).find(n => n.nodeType === Node.TEXT_NODE);
-    if (textNode) textNode.textContent = 'Listede';
+    const tn = Array.from(this.childNodes).find(n => n.nodeType === Node.TEXT_NODE);
+    if (tn) tn.textContent = 'Listede';
     showToast(anime.title + ' listeye eklendi! ✓');
   });
 
@@ -8485,9 +8476,12 @@ document.getElementById('pwChangeBtn').addEventListener('click', async function(
     display: none;
     position: fixed;
     inset: 0;
+    height: 100vh;
     z-index: 500;
     background: var(--bg);
-    overflow-y: auto;
+    overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
     animation: fadeSlideIn 0.25s ease;
   }
   .admin-page.open { display: block; }
@@ -9076,9 +9070,13 @@ document.getElementById('pwChangeBtn').addEventListener('click', async function(
   .anime-detail-page {
     display: none;
     position: fixed;
-    inset: 0; z-index: 300;
+    inset: 0;
+    height: 100vh;
+    z-index: 300;
     background: var(--bg);
-    overflow-y: auto;
+    overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
     animation: fadeSlideIn 0.25s ease;
   }
   .anime-detail-page.open { display: block; }
@@ -9385,7 +9383,7 @@ async function openAdminPanel() {
 document.getElementById('adminBack').addEventListener('click', () => {
   document.getElementById('adminPage').classList.remove('open');
   document.body.style.overflow = '';
-  window.location.hash = '';
+  history.pushState({}, '', '/');
   renderHomePage();
 });
 
