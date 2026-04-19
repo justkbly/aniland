@@ -9304,11 +9304,11 @@ function _setAnimesCache(list) {
 async function fetchAnimes() {
   console.debug('[fetchAnimes] başlatıldı');
   try {
-    const res = await fetch(API + '/api/animes');
+    const res = await fetch('https://cdn.aniland.net/animes.json?_=' + Date.now());
     if (!res.ok) { console.warn('[fetchAnimes] HTTP hata:', res.status); return; }
     const data = await res.json();
-    _setAnimesCache(data.animes || []);
-    console.debug('[fetchAnimes] tamamlandı —', (data.animes||[]).length, 'anime yüklendi');
+    _setAnimesCache(Array.isArray(data) ? data : (data.animes || []));
+    console.debug('[fetchAnimes] tamamlandı —', _animesCache.length, 'anime yüklendi');
   } catch(e) {
     console.error('[fetchAnimes] hata:', e);
   }

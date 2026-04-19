@@ -216,6 +216,7 @@ async function readAnimes() {
 
 async function writeAnimes(list) {
   fs.writeFileSync(ANIMES_FILE, JSON.stringify(list, null, 2), 'utf8');
+  ftpSyncAnimes();
 }
 
 async function withAnimes(fn) {
@@ -2286,9 +2287,26 @@ if (WebSocketServer) {
 }
 
 // ─── Başlat ───────────────────────────────────────────────────────────────────
+async function syncAnimesFromCDN() {
+  if (fs.existsSync(ANIMES_FILE) && fs.statSync(ANIMES_FILE).size > 100) return;
+  try {
+    console.log('[AniLand] animes.json bulunamadı, CDN\'den çekiliyor...');
+    const res = await new Promise((resolve, reject) => {
+      https.get('https://cdn.aniland.net/animes.json', r => resolve(r)).on('error', reject);
+    });
+    const chunks = [];
+    for await (const chunk of res) chunks.push(chunk);
+    fs.writeFileSync(ANIMES_FILE, Buffer.concat(chunks), 'utf8');
+    console.log('[AniLand] ✅ animes.json CDN\'den alındı.');
+  } catch (e) {
+    console.error('[AniLand] ❌ CDN sync hatası:', e.message);
+  }
+}
+
 async function startServer() {
   await connectDB();
   await ensureAdminExists();
+  await syncAnimesFromCDN();
   server.listen(PORT, "0.0.0.0", () => {
     console.log(`\n✅ AniLand backend çalışıyor → Port: ${PORT}`);
     console.log(`🌐 CORS origin: ${ALLOWED_ORIGIN}\n`);
