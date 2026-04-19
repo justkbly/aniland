@@ -3768,7 +3768,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
 }
 @media (max-width: 768px) {
   /* Body padding: üstte sabit nav + altta sabit nav */
-  body { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
+  body { padding-top: env(safe-area-inset-top); padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
 
   /* Navbar logosu mobilde daha küçük — topbarlarda da bu değer geçerli */
   .logo-img { height: 38px; width: auto; object-fit: contain; }
