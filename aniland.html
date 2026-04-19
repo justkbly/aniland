@@ -2323,25 +2323,26 @@
     .footer-grid { grid-template-columns: 1fr 1fr; }
   }
 
-  @media (max-width: 768px) {
+    @media (max-width: 768px) {
     /* NAV */
     nav { padding: 0 1rem; }
     .nav-links { display: none; }
     .search-box { display: none; }
 
-    /* SECTIONS — daha dar padding, daha temiz */
-    section { padding: 1.4rem 0 1rem; }
-    .section-header { padding: 0 1rem; margin-bottom: 0.75rem; }
-    .section-title { font-size: 1.1rem; letter-spacing: 1px; }
-    .section-title::before { height: 1.1rem; }
+    /* SECTIONS */
+    section { padding: 1.8rem 0 1.25rem; }
+    .section-header { padding: 0 1.25rem; margin-bottom: 1rem; }
+    .section-title { font-size: 1.2rem; letter-spacing: 1.5px; }
+    .section-title::before { height: 1.2rem; }
+    .see-all { font-size: 0.8rem; padding: 0.3rem 0.9rem; border-radius: 20px; background: rgba(0,212,180,0.08); border: 1px solid rgba(0,212,180,0.2); display: flex; align-items: center; gap: 0.25rem; white-space: nowrap; }
 
-    /* ANA SAYFA: anime grid → yatay scroll carousel */
+    /* ANIME GRID: yatay scroll carousel */
     .anime-grid {
       display: flex !important;
       flex-direction: row;
       overflow-x: auto;
-      gap: 0.6rem;
-      padding: 0 1rem 0.5rem;
+      gap: 0.75rem;
+      padding: 0.25rem 1.25rem 1rem;
       scroll-snap-type: x mandatory;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
@@ -2350,80 +2351,105 @@
     .anime-grid::-webkit-scrollbar { display: none; }
     .anime-card {
       flex-shrink: 0;
-      width: 130px;
+      width: 150px;
       scroll-snap-align: start;
+      border-radius: 14px;
     }
-    .anime-card:active { transform: scale(0.96); }
-    .card-title { font-size: 0.78rem; line-height: 1.3; }
-    .card-meta { font-size: 0.65rem; }
-    .card-info { padding: 0.55rem 0.5rem; }
-    .card-score { font-size: 0.65rem; padding: 0.2rem 0.4rem; top: 0.35rem; right: 0.35rem; }
-    .card-overlay { opacity: 1; background: linear-gradient(to top, rgba(7,7,15,0.9) 0%, rgba(7,7,15,0.15) 55%, transparent 100%); }
+    .anime-card:active { transform: scale(0.94); }
+    .card-img { height: 218px; }
+    .card-title { font-size: 0.82rem; line-height: 1.35; font-weight: 700; }
+    .card-meta { font-size: 0.68rem; }
+    .card-info { padding: 0.6rem 0.65rem; }
+    .card-score { font-size: 0.68rem; padding: 0.22rem 0.5rem; top: 0.4rem; right: 0.4rem; border-radius: 6px; }
+    .card-overlay { opacity: 1; background: linear-gradient(to top, rgba(7,7,15,0.95) 0%, rgba(7,7,15,0.25) 50%, transparent 100%); }
 
-    /* HERO — daha kompakt */
-    .hero { height: 52svh; min-height: 320px; padding: 0 1rem 2.5rem; }
-    .hero-title { font-size: clamp(2rem, 9vw, 3rem); }
-    .hero-sub { font-size: 0.8rem; }
-    .hero-cta { gap: 0.6rem; }
-    .hero-btn { padding: 0.65rem 1.25rem; font-size: 0.85rem; }
-    /* Hero kartları — yatay scroll */
-    .hero-cards { gap: 0.7rem; }
+    /* HERO */
+    .hero { height: 56svh; min-height: 340px; padding: 0 1.25rem 3rem; }
+    .hero-title { font-size: clamp(2.2rem, 10vw, 3.2rem); }
+    .hero-sub { font-size: 0.85rem; max-width: 100%; line-height: 1.5; }
+    .hero-cta { gap: 0.75rem; flex-wrap: wrap; margin-top: 1.2rem; }
+    .hero-btn { padding: 0.75rem 1.5rem; font-size: 0.88rem; flex: 1 1 140px; justify-content: center; border-radius: 12px; min-height: 48px; }
+    .hero-cards { gap: 0.75rem; }
     .hero-card { width: 130px; flex-shrink: 0; }
+    .hero-stats { gap: 1.75rem; padding-top: 0.75rem; margin-top: 0.75rem; }
+    .hero-stat-val { font-size: 1.5rem; }
+    .hero-stat-label { font-size: 0.65rem; }
+    .hero-tag { padding: 0.3rem 0.75rem; font-size: 0.7rem; }
 
-    /* FEATURED — tek sütun, kompakt */
-    .featured-row { grid-template-columns: 1fr; height: auto; max-height: none; padding: 1rem; gap: 0.85rem; }
+    /* FEATURED */
+    .featured-row { grid-template-columns: 1fr; height: auto; max-height: none; padding: 1.25rem; gap: 1rem; border-radius: 16px; }
     .featured-info { max-width: 100%; }
-    .featured-visual { height: 160px; max-height: 160px; border-radius: 10px; }
-    .featured-title { font-size: 1.75rem; }
-    .featured-desc { font-size: 0.82rem; -webkit-line-clamp: 2; line-clamp: 2; }
+    .featured-visual { height: 185px; max-height: 185px; border-radius: 12px; }
+    .featured-title { font-size: 1.9rem; }
+    .featured-desc { font-size: 0.84rem; -webkit-line-clamp: 3; line-clamp: 3; }
+    .featured-actions { flex-wrap: wrap; gap: 0.6rem; }
+    .featured-play { flex: 1 1 140px; justify-content: center; min-height: 48px; }
+    .featured-tag { padding: 0.25rem 0.65rem; font-size: 0.7rem; }
 
-    /* CW — yatay kaydırma */
+    /* CW */
     .cw-grid {
       display: flex !important;
       flex-direction: row;
       overflow-x: auto;
-      gap: 0.6rem;
-      padding: 0 1rem 0.5rem;
+      gap: 0.75rem;
+      padding: 0.25rem 1.25rem 1rem;
       scroll-snap-type: x mandatory;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
     }
     .cw-grid::-webkit-scrollbar { display: none; }
-    .cw-card { flex-shrink: 0; width: 155px; scroll-snap-align: start; }
+    .cw-card { flex-shrink: 0; width: 168px; scroll-snap-align: start; border-radius: 14px; }
 
     /* SCHEDULE */
-    .schedule-grid { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; padding: 0 1rem; }
+    .schedule-grid { grid-template-columns: repeat(2, 1fr); gap: 0.65rem; padding: 0 1.25rem; }
+    .schedule-day { font-size: 0.78rem; padding: 0.75rem 1rem; letter-spacing: 1.5px; }
+    .schedule-item { font-size: 0.82rem; padding: 0.55rem 1rem; }
 
-    /* MODAL → ALT SHEET */
+    /* MODAL — alt sheet */
     .modal-backdrop { align-items: flex-end; }
     .modal {
       max-width: 100%; width: 100%;
-      border-radius: 20px 20px 0 0;
+      border-radius: 24px 24px 0 0;
       transform: translateY(100%);
-      padding: 1.5rem 1.25rem 2.5rem;
+      padding: 1.75rem 1.5rem 3rem;
       max-height: 92svh; overflow-y: auto;
     }
     .modal-backdrop.open .modal { transform: translateY(0); }
+    .modal::before {
+      content: '';
+      display: block;
+      width: 36px; height: 4px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 2px;
+      margin: -0.75rem auto 1.25rem;
+    }
 
     /* DETAIL PAGE */
-    .detail-content { padding: 1.25rem 1rem 3rem; gap: 1.25rem; }
-    .detail-ep-grid { grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); }
-    .detail-actions { gap: 0.5rem; }
-    .detail-play-btn { width: 100%; justify-content: center; }
+    .detail-content { padding: 1.5rem 1.25rem 3rem; gap: 1.5rem; }
+    .detail-ep-grid { grid-template-columns: repeat(auto-fill, minmax(62px, 1fr)); gap: 0.5rem; }
+    .detail-actions { gap: 0.6rem; flex-wrap: wrap; }
+    .detail-play-btn { width: 100%; justify-content: center; min-height: 48px; }
 
     /* FOOTER */
-    footer { padding: 2rem 1rem; }
+    footer { padding: 2.5rem 1.25rem 2rem; }
     .footer-grid { grid-template-columns: 1fr; gap: 1.5rem; }
     .footer-links-group { display: none; }
     .footer-brand { text-align: center; }
+    .footer-copy { font-size: 0.78rem; }
   }
-
   @media (max-width: 480px) {
-    .anime-card { width: 115px; }
-    .cw-card { width: 140px; }
-    section { padding: 1.2rem 0 0.85rem; }
-    .hero { height: 48svh; min-height: 290px; }
+    .anime-card { width: 138px; }
+    .card-img { height: 200px; }
+    .cw-card { width: 155px; }
+    section { padding: 1.4rem 0 1rem; }
+    .section-header { padding: 0 1rem; }
+    .anime-grid { padding: 0.25rem 1rem 1rem; }
+    .cw-grid { padding: 0.25rem 1rem 1rem; }
+    .hero { height: 52svh; min-height: 310px; }
+    .hero-title { font-size: clamp(2rem, 9.5vw, 2.8rem); }
     .schedule-grid { grid-template-columns: repeat(2, 1fr); }
+    .featured-visual { height: 165px; }
+    .modal { padding: 1.5rem 1.25rem 2.5rem; }
   }
 
   /* ===== HAMBURGER MENU ===== */
@@ -3805,9 +3831,9 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     cursor: pointer;
     transition: color 0.2s, transform 0.15s;
     font-family: 'Rajdhani', sans-serif;
-    font-size: 0.62rem;
+    font-size: 0.56rem;
     font-weight: 700;
-    letter-spacing: 0.8px;
+    letter-spacing: 0.5px;
     text-transform: uppercase;
     padding: 0;
     -webkit-tap-highlight-color: transparent;
@@ -3923,7 +3949,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
   </ul>
   <div class="mobile-search" role="search">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    <input type="text" placeholder="Anime ara..." aria-label="Anime ara">
+    <input type="text" placeholder="Anime ara..." aria-label="Anime ara" id="mobileDrawerSearch">
   </div>
 </div>
 
@@ -4109,20 +4135,24 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
 <!-- MOBİL ALT NAV -->
 <nav class="mobile-bottom-nav" id="mobileBottomNav">
   <button class="mbn-btn active" id="mbnHome" onclick="history.pushState({}, '', '/'); closeAllOverlays(); renderHomePage();">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
     Ana Sayfa
   </button>
+  <button class="mbn-btn" id="mbnAnime" onclick="window.location.href='/anime'">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
+    Animeler
+  </button>
   <button class="mbn-btn" id="mbnSearch" onclick="openSearch()">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
     Ara
   </button>
-  <button class="mbn-btn" id="mbnTop" onclick="window.location.hash='#/top100'">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg>
-    Top 100
+  <button class="mbn-btn" id="mbnTakvim" onclick="window.location.href='/takvim'">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>
+    Takvim
   </button>
   <button class="mbn-btn" id="mbnProfile" onclick="openProfile()">
     <span class="mbn-avatar-dot" id="mbnAvatarDot"></span>
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
     <span id="mbnProfileLabel">Giriş</span>
   </button>
 </nav>

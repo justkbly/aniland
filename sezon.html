@@ -2073,15 +2073,19 @@
   /* Navbar logosu mobilde daha küçük */
   .logo-img { height: 64px; margin-top: 10px; margin-bottom: -18px; }
 
-    nav { padding: 0 1.5rem; }
+    nav { padding: 0 1rem; }
     .nav-links { display: none; }
     .search-box { display: none; }
-    section { padding: 3rem 1.5rem; }
-    .featured-row { grid-template-columns: 1fr; }
-    .featured-visual { height: 220px; }
-    .schedule-grid { grid-template-columns: repeat(3, 1fr); }
-    footer { padding: 3rem 1.5rem; }
-    .footer-grid { grid-template-columns: 1fr 1fr; }
+    section { padding: 1.8rem 0 1.25rem; }
+    .section-header { padding: 0 1.25rem; margin-bottom: 1rem; }
+    .section-title { font-size: 1.2rem; letter-spacing: 1.5px; }
+    .featured-row { grid-template-columns: 1fr; height: auto; max-height: none; padding: 1.25rem; border-radius: 16px; }
+    .featured-visual { height: 185px; max-height: 185px; border-radius: 12px; }
+    .schedule-grid { grid-template-columns: repeat(2, 1fr); gap: 0.65rem; padding: 0 1.25rem; }
+    footer { padding: 2.5rem 1.25rem; }
+    .footer-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+    .footer-links-group { display: none; }
+    .footer-brand { text-align: center; }
   }
 
   /* ===== HAMBURGER MENU ===== */
@@ -2185,6 +2189,61 @@
     .nav-avatar { display: none !important; }
   }
 
+  /* ===== PLAYER MOBILE ===== */
+  @media (max-width: 768px) {
+    body { padding-bottom: 0; }
+    .player-page { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    .player-topbar { padding: 0.55rem 0.9rem; gap: 0.5rem; position: sticky; top: 0; z-index: 20; }
+    .player-topbar-title { font-size: 0.95rem; }
+    .player-topbar-sub { display: none; }
+
+    .player-layout { flex-direction: column; min-height: auto; }
+    .player-main { padding: 0; }
+
+    .video-wrap {
+      border-radius: 0;
+      box-shadow: none;
+      aspect-ratio: 16/9;
+      width: 100%;
+    }
+
+    .anime-info-bar { padding: 0.7rem 1rem; flex-wrap: wrap; gap: 0.5rem; }
+    .anime-info-title { font-size: 0.95rem; }
+    .info-actions { gap: 0.4rem; flex-wrap: wrap; }
+    .action-btn { padding: 0.35rem 0.7rem; font-size: 0.78rem; min-height: 36px; }
+
+    .ep-section { padding: 0.75rem 1rem; }
+    .ep-grid { gap: 0.4rem; }
+    .ep-btn { font-size: 0.82rem; padding: 0.45rem 0.6rem; min-height: 38px; }
+
+    .rating-section { padding: 1rem; }
+    .comments-section { padding: 0.75rem 1rem; }
+
+    .player-sidebar {
+      width: 100%;
+      border-left: none;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .sidebar-scroll {
+      display: flex;
+      flex-direction: row;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      padding: 0.6rem;
+      gap: 0.6rem;
+    }
+    .sidebar-scroll::-webkit-scrollbar { display: none; }
+    .sidebar-card {
+      flex-shrink: 0;
+      width: 180px;
+      flex-direction: column;
+    }
+    .sidebar-thumb { width: 100%; height: 100px; }
+    .sidebar-title { font-size: 0.8rem; }
+    .sidebar-meta { font-size: 0.7rem; }
+  }
+
   /* ===== CONFIRM MODAL ===== */
   .confirm-overlay {
     display: none;
@@ -2278,6 +2337,15 @@
     flex: 1;
     min-height: 0;
   }
+  .video-iframe-container.pseudo-fullscreen {
+    position: fixed;
+    inset: 0;
+    z-index: 9500;
+    width: 100dvw;
+    height: 100dvh;
+    border-radius: 0 !important;
+  }
+  body.pseudo-fullscreen { overflow: hidden; }
   .iframe-nav-bar {
     display: flex;
     align-items: center;
@@ -3469,7 +3537,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
         </div>
         <!-- NO LINK SCREEN (shown when no drive link) -->
         <div class="video-screen" id="videoNoLinkScreen">
-          <div class="video-emoji" id="playerEmoji">🎬</div>
+          <div class="video-emoji" id="playerEmoji"></div>
           <div class="no-link-msg" id="noLinkMsg">Bu bölüm için henüz video linki eklenmemiş.</div>
         </div>
       </div>
@@ -3479,9 +3547,9 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
         <div>
           <div class="anime-info-title" id="playerAnimeTitle">Demon Slayer: Kimetsu no Yaiba</div>
           <div class="anime-info-meta">
-            <span class="meta-chip">⭐ 9.1</span>
-            <span class="meta-chip">📅 2024</span>
-            <span class="meta-chip">🎬 Sezon 4</span>
+            <span class="meta-chip">9.1</span>
+            <span class="meta-chip">2024</span>
+            <span class="meta-chip">Sezon 4</span>
           </div>
         </div>
         <div class="info-actions">
@@ -3499,7 +3567,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
 
       <!-- RATING -->
       <div class="rating-section" id="ratingSection">
-        <div class="rating-title">⭐ Puan Ver</div>
+        <div class="rating-title">Puan Ver</div>
         <div class="rating-avg-wrap">
           <span class="rating-avg-val" id="ratingAvgVal">—</span>
           <span class="rating-avg-label" id="ratingAvgLabel">puan yok</span>
@@ -3837,7 +3905,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     card.addEventListener('click', function() {
       const title = this.querySelector('.card-title')?.textContent || 'Anime';
       const meta = this.querySelector('.card-meta')?.textContent || 'Bölüm 1';
-      const emoji = this.querySelector('.card-thumb')?.textContent?.trim() || '🎬';
+      const emoji = this.querySelector('.card-thumb')?.textContent?.trim() || '';
       openPlayer(title, meta, emoji, '', {}, 1, '', 13);
     });
   });
@@ -3881,11 +3949,32 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     if (currentEp > 1) loadEpisode(currentEp - 1);
   });
 
-  document.getElementById('iframeFullscreen').addEventListener('click', () => {
-    const iframe = document.getElementById('driveIframe');
-    if (iframe.requestFullscreen) iframe.requestFullscreen();
-    else if (iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
-  });
+  (function() {
+    const fsBtn = document.getElementById('iframeFullscreen');
+    const container = document.getElementById('videoIframeContainer');
+    function exitPseudo() {
+      container.classList.remove('pseudo-fullscreen');
+      document.body.classList.remove('pseudo-fullscreen');
+      fsBtn.innerHTML = '⛶';
+      fsBtn.title = 'Tam Ekran';
+    }
+    function enterPseudo() {
+      container.classList.add('pseudo-fullscreen');
+      document.body.classList.add('pseudo-fullscreen');
+      fsBtn.innerHTML = '✕';
+      fsBtn.title = 'Tam Ekrandan Çık';
+    }
+    fsBtn.addEventListener('click', () => {
+      if (container.classList.contains('pseudo-fullscreen')) { exitPseudo(); return; }
+      const el = container;
+      if (el.requestFullscreen) { el.requestFullscreen().catch(() => enterPseudo()); }
+      else if (el.webkitRequestFullscreen) { el.webkitRequestFullscreen(); }
+      else { enterPseudo(); }
+    });
+    document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) exitPseudo(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && container.classList.contains('pseudo-fullscreen')) exitPseudo(); });
+    container.addEventListener('dblclick', () => { if (container.classList.contains('pseudo-fullscreen')) exitPseudo(); });
+  })();
 
   document.getElementById('likeBtn').addEventListener('click', function() {
     this.classList.toggle('liked');
@@ -3981,7 +4070,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
         if (res.ok) {
           _myRating = score;
           updateRatingUI(data.avg, data.count, score);
-          showToast('⭐ ' + score + ' yıldız verdin!');
+          showToast('' + score + ' yıldız verdin!');
         } else {
           showToast('⚠ ' + (data.error || 'Hata'));
         }
@@ -4066,7 +4155,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
                 </div>
                 <span style="font-size:0.73rem;color:${netScore >= 0 ? 'var(--neon)' : 'var(--red)'};font-weight:700;">${netScore >= 0 ? '+' : ''}${netScore}</span>
                 <div class="comment-reply-btn" data-cid="${escHtml(c.id)}" style="cursor:pointer;color:var(--muted);font-size:0.75rem;transition:color 0.2s;" title="Yanıt yaz">
-                  💬 Yanıtla
+                  Yanıtla
                 </div>
                 ${(isOwn || isAdmin) ? `<span class="comment-delete" data-cid="${escHtml(c.id)}" style="font-size:0.75rem;color:var(--muted);cursor:pointer;opacity:0.6;">Sil</span>` : ''}
               </div>
@@ -4945,12 +5034,12 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
       <div class="filter-chip" data-filter="Spor">⚽ Spor</div>
       <div class="filter-chip" data-filter="Isekai">🌀 Isekai</div>
       <div class="filter-chip" data-filter="Dark">🌑 Dark</div>
-      <div class="filter-chip" data-filter="Sci-Fi">🤖 Sci-Fi</div>
+      <div class="filter-chip" data-filter="Sci-Fi">Sci-Fi</div>
     </div>
 
     <!-- TRENDING (shown when no query) -->
     <div class="trending-section" id="trendingSection">
-      <div class="trending-label">🔥 Trend Aramalar</div>
+      <div class="trending-label">Trend Aramalar</div>
       <div class="trending-tags">
         <span class="trending-tag" data-q="Demon Slayer">🗡️ Demon Slayer</span>
         <span class="trending-tag" data-q="Jujutsu Kaisen">⚡ Jujutsu Kaisen</span>
@@ -5125,7 +5214,7 @@ function refreshFilterChips() {
   const labelMap = {
     all: 'Tümü', Aksiyon: '⚔️ Aksiyon', Fantezi: '🔮 Fantezi', Romantik: '💘 Romantik',
     Komedi: '😂 Komedi', Spor: '⚽ Spor', Isekai: '🌀 Isekai', Dark: '🌑 Dark',
-    'Sci-Fi': '🤖 Sci-Fi', Korku: '👁️ Korku', Dövüş: '🥊 Dövüş', Macera: '🗺️ Macera',
+    'Sci-Fi': 'Sci-Fi', Korku: 'Korku', Dövüş: '🥊 Dövüş', Macera: '🗺️ Macera',
     Shounen: '🏯 Shounen', Shoujo: '🌸 Shoujo', Drama: '🎭 Drama'
   };
   container.innerHTML = genres.map(g =>
@@ -6285,7 +6374,7 @@ function _buildPublicProfileHTML(p) {
         </div>
 
         <div class="settings-card">
-          <div class="settings-card-title">🎬 İzleme Tercihleri</div>
+          <div class="settings-card-title">İzleme Tercihleri</div>
           <div class="settings-row">
             <span class="settings-label">Varsayılan Kalite</span>
             <span class="settings-val" style="color:var(--neon);">1080p</span>
@@ -6585,7 +6674,7 @@ function openProfile() {
   if (session.role === 'admin') badges.push({ label: '⚙️ Admin', cls: 'cyan' });
   const completed = wl.filter(w => w.status === 'completed').length;
   if (completed >= 10) badges.push({ label: '🏆 Top İzleyici', cls: '' });
-  if (completed >= 1) badges.push({ label: '🎬 ' + completed + ' Tamamlandı', cls: 'pink' });
+  if (completed >= 1) badges.push({ label: '' + completed + ' Tamamlandı', cls: 'pink' });
   if (badges.length === 0) badges.push({ label: '🌱 Yeni Üye', cls: '' });
 
   document.getElementById('profileBadges').innerHTML =
@@ -6837,7 +6926,7 @@ async function renderPersonalStats(username) {
       <!-- Verilen Puanlar -->
       ${ratedAnimes.length ? `
       <div>
-        <div style="font-family:'Bebas Neue',cursive;font-size:1rem;letter-spacing:2px;color:var(--gold);margin-bottom:0.8rem;">⭐ Verilen Puanlar</div>
+        <div style="font-family:'Bebas Neue',cursive;font-size:1rem;letter-spacing:2px;color:var(--gold);margin-bottom:0.8rem;">Verilen Puanlar</div>
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;">
           <table class="stats-table">
             <thead><tr><th>Anime</th><th>Tür</th><th style="text-align:right;">Puan</th></tr></thead>
@@ -7418,7 +7507,7 @@ document.getElementById('pwChangeBtn').addEventListener('click', async function(
           <div id="analyticsGenre"><div style="color:var(--muted);font-size:0.85rem;">Yükleniyor...</div></div>
         </div>
         <div class="analytics-card">
-          <div class="analytics-card-title">⭐ En Yüksek Puanlı</div>
+          <div class="analytics-card-title">En Yüksek Puanlı</div>
           <div id="analyticsTopRated"><div style="color:var(--muted);font-size:0.85rem;">Yükleniyor...</div></div>
         </div>
         <div class="analytics-card">
@@ -7826,7 +7915,7 @@ document.getElementById('ef-save').addEventListener('click', async () => {
 
   const body = {
     title,
-    emoji: document.getElementById('ef-emoji').value.trim() || '🎬',
+    emoji: document.getElementById('ef-emoji').value.trim() || '',
     genre,
     score: document.getElementById('ef-score').value || '',
     eps: document.getElementById('ef-eps').value || Object.keys(epLinks).length.toString() || '1',
@@ -8020,7 +8109,7 @@ document.getElementById('af-submit').addEventListener('click', async () => {
     id: Date.now().toString(),
     title,
     slug: slugify(title),
-    emoji: document.getElementById('af-emoji').value.trim() || '🎬',
+    emoji: document.getElementById('af-emoji').value.trim() || '',
     genre,
     score: document.getElementById('af-score').value || '',
     eps: epsVal || Object.keys(epLinks).length.toString() || '1',
@@ -8306,9 +8395,9 @@ function openAnimeDetail(anime) {
   document.getElementById('detailGenre').textContent = anime.genre;
   document.getElementById('detailTitle').textContent = anime.title;
   document.getElementById('detailMeta').innerHTML = [
-    anime.score ? '<span class="detail-meta-chip">⭐ ' + escHtml(anime.score) + '</span>' : '',
-    anime.year  ? '<span class="detail-meta-chip">📅 ' + escHtml(anime.year)  + '</span>' : '',
-    anime.eps   ? '<span class="detail-meta-chip">🎬 ' + escHtml(anime.eps)   + ' Bölüm</span>' : '',
+    anime.score ? '<span class="detail-meta-chip">' + escHtml(anime.score) + '</span>' : '',
+    anime.year  ? '<span class="detail-meta-chip">' + escHtml(anime.year)  + '</span>' : '',
+    anime.eps   ? '<span class="detail-meta-chip">' + escHtml(anime.eps)   + ' Bölüm</span>' : '',
   ].filter(Boolean).join('');
   document.getElementById('detailDesc').textContent = anime.desc || 'Açıklama henüz eklenmemiş.';
   document.getElementById('detailPlayBtn').onclick = () => {
@@ -8865,7 +8954,7 @@ function wtInjectPlayerElements() {
     wtPanelWrap.className = 'wt-panel-wrap';
     const emojiList = ['🔥','😭','😂','🤯','❤️','👏','😱','💀','⚡','🗡️'];
     const emojiBtns = emojiList.map(e => '<button class="wt-emoji-btn" data-emoji="'+e+'">'+e+'</button>').join('');
-    wtPanelWrap.innerHTML = '<div class="wt-panel-header"><div class="wt-panel-title">🎬 <span id="wtPanelTitleText">Watch Together</span></div><button class="wt-panel-close" id="wtPanelCloseBtn">✕</button></div><div class="wt-members"><div class="wt-members-label">Katılımcılar</div><div class="wt-members-list" id="wtMembersList"></div></div><div class="wt-chat" id="wtChat"></div><div class="wt-input-row"><div class="wt-emoji-bar">'+emojiBtns+'</div><div class="wt-text-row"><input type="text" class="wt-chat-input" id="wtChatInput" placeholder="Mesaj yaz..." maxlength="500"><button class="wt-send-btn" id="wtSendBtn">Gönder</button></div></div>';
+    wtPanelWrap.innerHTML = '<div class="wt-panel-header"><div class="wt-panel-title"><span id="wtPanelTitleText">Watch Together</span></div><button class="wt-panel-close" id="wtPanelCloseBtn">✕</button></div><div class="wt-members"><div class="wt-members-label">Katılımcılar</div><div class="wt-members-list" id="wtMembersList"></div></div><div class="wt-chat" id="wtChat"></div><div class="wt-input-row"><div class="wt-emoji-bar">'+emojiBtns+'</div><div class="wt-text-row"><input type="text" class="wt-chat-input" id="wtChatInput" placeholder="Mesaj yaz..." maxlength="500"><button class="wt-send-btn" id="wtSendBtn">Gönder</button></div></div>';
     playerLayout.appendChild(wtPanelWrap);
   }
 
@@ -8874,7 +8963,7 @@ function wtInjectPlayerElements() {
     const wtBtn = document.createElement('button');
     wtBtn.id = 'wtToggleBtn';
     wtBtn.className = 'wt-btn';
-    wtBtn.innerHTML = '🎬 Watch Together';
+    wtBtn.innerHTML = 'Watch Together';
     wtBtn.onclick = function() {
       if (WT.isInRoom) {
         const p = document.getElementById('wtPanelWrap');
@@ -8960,7 +9049,7 @@ console.log('[AniLand] Watch Together v2 yuklendi');
 <div class="wt-modal-backdrop" id="wtModal">
   <div class="wt-modal">
     <button class="wt-modal-close" id="wtModalClose">✕</button>
-    <div class="wt-modal-title">🎬 Watch Together</div>
+    <div class="wt-modal-title">Watch Together</div>
 
     <div class="wt-tabs">
       <button class="wt-tab active" id="wtTabCreate">Oda Oluştur</button>
