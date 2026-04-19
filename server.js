@@ -4,6 +4,25 @@ const fs       = require('fs');
 const path     = require('path');
 const crypto   = require('crypto');
 const mongoose = require('mongoose');
+const ftp      = require('basic-ftp');
+
+const FTP_HOST   = process.env.FTP_HOST || 'sxb1plzcpnl510389.prod.sxb1.secureserver.net';
+const FTP_USER   = process.env.FTP_USER || 'wtq97o2y5psu';
+const FTP_PASS   = process.env.FTP_PASS || 'KUBIcPanelSifre1!';
+const FTP_REMOTE = process.env.FTP_REMOTE || '/public_html/animes.json';
+
+async function ftpSyncAnimes() {
+  const client = new ftp.Client(30000);
+  try {
+    await client.access({ host: FTP_HOST, user: FTP_USER, password: FTP_PASS, secure: false, port: 21 });
+    await client.uploadFrom(ANIMES_FILE, FTP_REMOTE);
+    console.log('[FTP] ✅ animes.json hostinge yüklendi.');
+  } catch (e) {
+    console.error('[FTP] ❌ sync hatası:', e.message);
+  } finally {
+    client.close();
+  }
+}
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://kblyben_db_user:S31fclGU8s5ViSZT@session.zhzbrfb.mongodb.net/AniLandDB?retryWrites=true&w=majority';
 
@@ -185,14 +204,18 @@ async function withUsers(fn) {
   }
 }
 
-// ─── Anime verisi ─────────────────────────────────────────────────────────────
+// ─── Anime verisi (local JSON + FTP sync) ────────────────────────────────────
 async function readAnimes() {
-  return AnimeModel.find({}).lean();
+  try {
+    const raw = fs.readFileSync(ANIMES_FILE, 'utf8');
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
 }
 
 async function writeAnimes(list) {
-  await AnimeModel.deleteMany({});
-  if (list.length) await AnimeModel.insertMany(list, { ordered: false }).catch(() => {});
+  fs.writeFileSync(ANIMES_FILE, JSON.stringify(list, null, 2), 'utf8');
 }
 
 async function withAnimes(fn) {
@@ -1907,7 +1930,7 @@ const server = http.createServer(async (req, res) => {
       if (!html) { json(res, 404, { error: 'Sayfa bulunamadı.' }); return; }
 
       let _anime = null;
-      try { _anime = await AnimeModel.findOne({ slug: _slug }).lean(); } catch (_) {}
+      try { _anime = (await readAnimes()).find(a => a.slug === _slug) || null; } catch (_) {}
 
       if (_anime) {
         const _rawTitle = _ep
