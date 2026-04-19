@@ -1533,10 +1533,9 @@
   /* ===== VIDEO PLAYER PAGE ===== */
   .player-page {
     display: none;
-    position: fixed;
-    inset: 0;
+    position: relative;
+    min-height: 100vh;
     background: var(--void);
-    z-index: 200;
     overflow: hidden;
     animation: fadeSlideIn 0.35s ease;
     flex-direction: column;
@@ -1878,9 +1877,8 @@
   @media (max-width: 768px) {
     /* Oynatıcı sayfası: üstten alta scroll */
     .player-page {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      height: 100svh;
+      position: relative;
+      min-height: 100svh;
       overflow-y: auto;
       overflow-x: hidden;
       -webkit-overflow-scrolling: touch;
@@ -3929,6 +3927,9 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
   </div>
 </div>
 
+<!-- HOME WRAPPER -->
+<div id="homeWrapper">
+
 <!-- HERO -->
 <section class="hero" aria-label="Ana banner">
   <div class="hero-bg"></div>
@@ -4125,6 +4126,8 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     <span id="mbnProfileLabel">Giriş</span>
   </button>
 </nav>
+
+</div><!-- /homeWrapper -->
 
 <!-- VIDEO PLAYER PAGE -->
 <div class="player-page" id="playerPage">
@@ -4976,8 +4979,10 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
       }
     }
     document.querySelectorAll('.sidebar-card').forEach(c => c.classList.remove('active'));
+    document.getElementById('homeWrapper').style.display = 'none';
     playerPage.classList.add('open');
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflow = '';
+    window.scrollTo(0, 0);
     buildEpGrid();
     loadEpisode(currentEp);
     // Liste butonunu güncelle
@@ -5030,6 +5035,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     if (typeof wtCleanupPlayerElements === 'function') wtCleanupPlayerElements();
     playerPage.classList.remove('open');
     document.body.style.overflow = '';
+    window.scrollTo(0, 0);
     // Video ve iframe durdur
     const _vid = document.getElementById('html5VideoPlayer');
     if (_vid) { _vid.pause(); _vid.src = ''; }
@@ -6025,10 +6031,9 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
 <style>
   .search-page {
     display: none;
-    position: fixed;
-    inset: 0;
+    position: relative;
+    min-height: 100vh;
     background: var(--void);
-    z-index: 250;
     overflow-y: auto;
     animation: fadeSlideIn 0.25s ease;
   }
@@ -6415,7 +6420,9 @@ const resultsHeader = document.getElementById('resultsHeader');
 
 function closeSearch() {
   searchPage.classList.remove('open');
+  document.getElementById('homeWrapper').style.display = '';
   document.body.style.overflow = '';
+  window.scrollTo(0, 0);
   searchInputBig.value = '';
   searchQuery = '';
   searchClear.classList.remove('visible');
@@ -6608,8 +6615,10 @@ document.addEventListener('keydown', (e) => {
 function openSearch(q) {
   refreshFilterChips();
   populateYearFilter();
+  document.getElementById('homeWrapper').style.display = 'none';
   searchPage.classList.add('open');
-  document.body.style.overflow = 'hidden';
+  document.body.style.overflow = '';
+  window.scrollTo(0, 0);
   const mbnSearch = document.getElementById('mbnSearch');
   if (mbnSearch) mbnSearch.classList.add('active');
   setTimeout(() => searchInputBig.focus(), 100);
@@ -6713,8 +6722,9 @@ function openSearch(q) {
 
   /* ── Herkese Açık Profil Sayfası ── */
   .pub-profile-page {
-    display: none; position: fixed; inset: 0;
-    background: var(--void); z-index: 270;
+    display: none; position: relative;
+    min-height: 100vh;
+    background: var(--void);
     overflow-y: scroll;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch; animation: fadeSlideIn 0.3s ease;
@@ -7003,15 +7013,19 @@ function openPublicProfile(username) {
 
 function closePubProfile(goBack) {
   pubProfilePage.classList.remove('open');
+  document.getElementById('homeWrapper').style.display = '';
   document.body.style.overflow = '';
+  window.scrollTo(0, 0);
   if (goBack !== false) window.history.back();
 }
 
 document.getElementById('pubProfileBack').addEventListener('click', () => closePubProfile());
 
 async function _renderPublicProfile(username) {
+  document.getElementById('homeWrapper').style.display = 'none';
   pubProfilePage.classList.add('open');
-  document.body.style.overflow = 'hidden';
+  document.body.style.overflow = '';
+  window.scrollTo(0, 0);
   document.getElementById('pubProfileTopbarTitle').textContent = '@' + username;
   document.getElementById('pubProfileContent').innerHTML = `
     <div class="pub-profile-loading">
@@ -7208,10 +7222,9 @@ function _buildPublicProfileHTML(p) {
 <style>
   .profile-page {
     display: none;
-    position: fixed;
-    inset: 0;
+    position: relative;
+    min-height: 100vh;
     background: var(--void);
-    z-index: 260;
     overflow-y: auto;
     animation: fadeSlideIn 0.3s ease;
   }
@@ -8059,12 +8072,16 @@ function openProfile() {
     });
   });
 
+  document.getElementById('homeWrapper').style.display = 'none';
   document.getElementById('profilePage').classList.add('open');
+  window.scrollTo(0, 0);
   switchPTab('watchlist');
 }
 
 function closeProfile() {
   document.getElementById('profilePage').classList.remove('open');
+  document.getElementById('homeWrapper').style.display = '';
+  window.scrollTo(0, 0);
 }
 
 // ===== BIO EDIT =====
@@ -8474,10 +8491,8 @@ document.getElementById('pwChangeBtn').addEventListener('click', async function(
 <style>
   .admin-page {
     display: none;
-    position: fixed;
-    inset: 0;
-    height: 100vh;
-    z-index: 500;
+    position: relative;
+    min-height: 100vh;
     background: var(--bg);
     overflow-y: scroll;
     -webkit-overflow-scrolling: touch;
@@ -9069,10 +9084,8 @@ document.getElementById('pwChangeBtn').addEventListener('click', async function(
 <style>
   .anime-detail-page {
     display: none;
-    position: fixed;
-    inset: 0;
-    height: 100vh;
-    z-index: 300;
+    position: relative;
+    min-height: 100vh;
     background: var(--bg);
     overflow-y: scroll;
     -webkit-overflow-scrolling: touch;
@@ -9369,8 +9382,10 @@ function slugify(str) {
 async function openAdminPanel() {
   const session = getSession();
   if (!session || session.role !== 'admin') { alert('Bu sayfaya erişim yetkiniz yok.'); return; }
+  document.getElementById('homeWrapper').style.display = 'none';
   document.getElementById('adminPage').classList.add('open');
-  document.body.style.overflow = 'hidden';
+  document.body.style.overflow = '';
+  window.scrollTo(0, 0);
   await fetchAnimes(); // Admin paneli açılırken taze veri çek
   renderAdminTable();
   updateAdminStats();
@@ -9382,7 +9397,9 @@ async function openAdminPanel() {
 
 document.getElementById('adminBack').addEventListener('click', () => {
   document.getElementById('adminPage').classList.remove('open');
+  document.getElementById('homeWrapper').style.display = '';
   document.body.style.overflow = '';
+  window.scrollTo(0, 0);
   history.pushState({}, '', '/');
   renderHomePage();
 });
@@ -10442,14 +10459,18 @@ function openAnimeDetail(anime) {
 
   renderSimilarAnimes(anime);
 
+  document.getElementById('homeWrapper').style.display = 'none';
   document.getElementById('animeDetailPage').classList.add('open');
-  document.body.style.overflow = 'hidden';
+  document.body.style.overflow = '';
+  window.scrollTo(0, 0);
 }
 
 document.getElementById('detailBack').addEventListener('click', () => {
   document.title = 'AniLand';
   document.getElementById('animeDetailPage').classList.remove('open');
+  document.getElementById('homeWrapper').style.display = '';
   document.body.style.overflow = '';
+  window.scrollTo(0, 0);
   history.pushState({}, '', '/');
 });
 
@@ -10466,7 +10487,18 @@ function closeAllOverlays() {
     document.getElementById('driveIframe').src = 'about:blank';
     if (typeof stopViewerPing === 'function') stopViewerPing();
   }
+  // Search & profile pages
+  const _sp = document.getElementById('searchPage');
+  if (_sp) _sp.classList.remove('open');
+  const _prof = document.getElementById('profilePage');
+  if (_prof) _prof.classList.remove('open');
+  const _pub = document.getElementById('pubProfilePage');
+  if (_pub) _pub.classList.remove('open');
+  // Ana sayfayı geri göster
+  const _hw = document.getElementById('homeWrapper');
+  if (_hw) _hw.style.display = '';
   document.body.style.overflow = '';
+  window.scrollTo(0, 0);
 }
 
 // ===== HASH ROUTER =====
