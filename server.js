@@ -128,10 +128,9 @@ const TOP100_FILE   = path.join(__dirname, 'top100.html');
 // örn: ALLOWED_ORIGIN=https://aniland.com node server.js
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || '*';
 
-// ─── HTML önbelleği (diskten oku, mtime değişince yenile) ────────────────────
+// ─── HTML önbelleği (bir kez oku, bellekte tut) ──────────────────────────────
 const _htmlCaches = {};
 const _htmlMtimes = {};
-
 function getHtml(filePath) {
   if (!fs.existsSync(filePath)) return null;
   try {
@@ -139,7 +138,7 @@ function getHtml(filePath) {
     if (!_htmlCaches[filePath] || _htmlMtimes[filePath] !== mtime) {
       _htmlCaches[filePath] = fs.readFileSync(filePath, 'utf8');
       _htmlMtimes[filePath] = mtime;
-      console.log(`[AniLand] 🔄 HTML yenilendi: ${path.basename(filePath)}`);
+      if (_htmlMtimes[filePath]) console.log(`[AniLand] 🔄 HTML yenilendi: ${path.basename(filePath)}`);
     }
   } catch { return null; }
   return _htmlCaches[filePath];
