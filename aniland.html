@@ -2318,18 +2318,9 @@
   }
 
   @media (max-width: 768px) {
-    /* ── NAV ── */
-    nav { padding: 0 1rem; height: 56px; }
-    .nav-links { display: none; }
-    .search-box { display: none; }
-    /* Hamburger gizle — alt nav zaten var */
-    .hamburger { display: none !important; }
+    /* ── NAV — mobilde tamamen gizle ── */
+    nav { display: none !important; }
     .mobile-nav { display: none !important; }
-    /* Nav sağında sadece tema + bildirim göster */
-    .btn-login { display: none; }
-    .nav-avatar { display: none !important; }
-    .theme-toggle { display: flex; }
-    .nav-notif-btn { display: flex !important; }
 
     /* ── LOGO ── */
     .logo-img { height: 38px; width: auto; object-fit: contain; }
@@ -3777,7 +3768,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
 }
 @media (max-width: 768px) {
   /* Body padding: üstte sabit nav + altta sabit nav */
-  body { padding-bottom: calc(64px + env(safe-area-inset-bottom)); padding-top: 56px; }
+  body { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
 
   /* Navbar logosu mobilde daha küçük — topbarlarda da bu değer geçerli */
   .logo-img { height: 38px; width: auto; object-fit: contain; }
@@ -4145,7 +4136,6 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     if (Math.abs(y - lastY) < 6) { ticking = false; return; }
     var down = y > lastY;
     lastY = y;
-    if (topNav) topNav.classList.toggle('nav-scroll-hidden', down && y > 80);
     if (botNav) botNav.classList.toggle('nav-scroll-hidden', down && y > 80);
     ticking = false;
   }
