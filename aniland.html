@@ -11893,17 +11893,39 @@ console.log('[AniLand] Watch Together v2 yuklendi');
     return null;
   }
 
+  // Smooth scroll state for sub-containers
+  let cCurrent = 0, cTarget = 0, cRaf = null, cEl = null;
+  const C_EASE = 0.09;
+
+  function tickContainer() {
+    if (!cEl) { cRaf = null; return; }
+    const diff = cTarget - cCurrent;
+    if (Math.abs(diff) < 0.8) {
+      cCurrent = cTarget;
+      cEl.scrollTop = cCurrent;
+      cRaf = null;
+      return;
+    }
+    cCurrent += diff * C_EASE;
+    cEl.scrollTop = cCurrent;
+    cRaf = requestAnimationFrame(tickContainer);
+  }
+
   window.addEventListener('wheel', e => {
     if (isMobile() || isPlayerOpen()) return;
     const container = getScrollContainer();
     if (container) {
       e.preventDefault();
-      container.scrollTop += e.deltaY * 1.4;
+      if (container !== cEl) { cEl = container; cCurrent = cTarget = container.scrollTop; }
+      const max = container.scrollHeight - container.clientHeight;
+      cTarget = Math.max(0, Math.min(cTarget + e.deltaY * 1.1, max));
+      if (!cRaf) { cRaf = requestAnimationFrame(tickContainer); }
       return;
     }
+    cEl = null;
     e.preventDefault();
     const max = document.documentElement.scrollHeight - window.innerHeight;
-    target = Math.max(0, Math.min(target + e.deltaY * 1.4, max));
+    target = Math.max(0, Math.min(target + e.deltaY * 1.1, max));
     if (!raf) { raf = requestAnimationFrame(tick); }
   }, { passive: false });
 
@@ -11911,6 +11933,17 @@ console.log('[AniLand] Watch Together v2 yuklendi');
   window.addEventListener('scroll', () => {
     if (!raf) { current = target = window.scrollY; }
   }, { passive: true });
+
+  // Body scrollbar gizle sayfa acikken
+  function updateBodyScroll() {
+    const anyOpen = !!getScrollContainer();
+    document.documentElement.style.overflow = anyOpen ? 'hidden' : '';
+  }
+  const _mo = new MutationObserver(updateBodyScroll);
+  ['animeDetailPage','adminPage'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) _mo.observe(el, { attributes: true, attributeFilter: ['class'] });
+  });
 
   window.addEventListener('load', init);
   init();
