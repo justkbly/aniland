@@ -11887,7 +11887,9 @@ console.log('[AniLand] Watch Together v2 yuklendi');
       return animeDetailPage.querySelector('.detail-scroll-body') || animeDetailPage;
     }
     const adminPage = document.getElementById('adminPage');
-    if (adminPage && adminPage.classList.contains('open')) return adminPage;
+    if (adminPage && adminPage.classList.contains('open')) {
+      return adminPage.querySelector('.admin-scroll-body') || adminPage;
+    }
     return null;
   }
 
