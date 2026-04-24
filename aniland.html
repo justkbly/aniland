@@ -2323,7 +2323,7 @@
     .mobile-nav { display: none !important; }
 
     /* ── LOGO ── */
-    .logo-img { height: 38px; width: auto; object-fit: contain; }
+    .logo-img { height: 56px; width: auto; object-fit: contain; }
 
     /* ── SECTIONS ── */
     section { padding: 1.2rem 0 0.8rem; }
@@ -3771,7 +3771,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
   body { padding-top: env(safe-area-inset-top); padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
 
   /* Navbar logosu mobilde daha küçük — topbarlarda da bu değer geçerli */
-  .logo-img { height: 38px; width: auto; object-fit: contain; }
+  .logo-img { height: 56px; width: auto; object-fit: contain; }
 
   .mobile-bottom-nav {
     display: flex;
@@ -11881,8 +11881,20 @@ console.log('[AniLand] Watch Together v2 yuklendi');
     raf = requestAnimationFrame(tick);
   }
 
+  function getScrollContainer() {
+    const animePage = document.getElementById('animePage');
+    if (animePage && animePage.classList.contains('open')) return animePage;
+    return null;
+  }
+
   window.addEventListener('wheel', e => {
     if (isMobile() || isPlayerOpen()) return;
+    const container = getScrollContainer();
+    if (container) {
+      e.preventDefault();
+      container.scrollTop += e.deltaY * 1.4;
+      return;
+    }
     e.preventDefault();
     const max = document.documentElement.scrollHeight - window.innerHeight;
     target = Math.max(0, Math.min(target + e.deltaY * 1.4, max));
