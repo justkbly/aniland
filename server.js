@@ -2316,13 +2316,57 @@ async function syncAnimesFromCDN() {
   }
 }
 
+const CDN_HTML_URL = process.env.CDN_HTML_URL || 'https://cdn.aniland.net/aniland.html';
+
+async function syncHtmlFromCDN() {
+  try {
+    console.log('[AniLand] aniland.html CDN\'den çekiliyor...');
+    const res = await new Promise((resolve, reject) => {
+      https.get(CDN_HTML_URL, r => resolve(r)).on('error', reject);
+    });
+    if (res.statusCode !== 200) {
+      console.warn(`[AniLand] ⚠️  HTML CDN yaniti: ${res.statusCode}, mevcut dosya korundu.`);
+      res.resume();
+      return;
+    }
+    const chunks = [];
+    for await (const chunk of res) chunks.push(chunk);
+    fs.writeFileSync(HTML_FILE, Buffer.concat(chunks), 'utf8');
+    console.log('[AniLand] ✅ aniland.html CDN\'den alindi.');
+  } catch (e) {
+    console.error('[AniLand] ❌ HTML CDN sync hatasi:', e.message);
+  }
+}
+
+const SELF_URL = process.env.RENDER_EXTERNAL_URL || process.env.SELF_URL || '';
+const PING_INTERVAL_MS = 14 * 60 * 1000;
+
+function startKeepAlive() {
+  if (!SELF_URL) {
+    console.warn('[Keep-alive] RENDER_EXTERNAL_URL env tanimli degil, keep-alive devre disi.');
+    return;
+  }
+  const pingUrl = SELF_URL.replace(/\/$/, '') + '/api/settings';
+  setInterval(() => {
+    https.get(pingUrl, (r) => {
+      console.log('[Keep-alive] Ping ->' + r.statusCode);
+      r.resume();
+    }).on('error', (e) => {
+      console.warn('[Keep-alive] Ping hatasi:', e.message);
+    });
+  }, PING_INTERVAL_MS);
+  console.log('[Keep-alive] Aktif -> her 14 dakikada bir ' + pingUrl);
+}
+
 async function startServer() {
   await connectDB();
   await ensureAdminExists();
   await syncAnimesFromCDN();
+  await syncHtmlFromCDN();
   server.listen(PORT, "0.0.0.0", () => {
-    console.log(`\n✅ AniLand backend çalışıyor → Port: ${PORT}`);
-    console.log(`🌐 CORS origin: ${ALLOWED_ORIGIN}\n`);
+    console.log('\n✅ AniLand backend calisiyor -> Port: ' + PORT);
+    console.log('🌐 CORS origin: ' + ALLOWED_ORIGIN + '\n');
+    startKeepAlive();
   });
 }
 
