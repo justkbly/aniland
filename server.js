@@ -2302,13 +2302,65 @@ async function syncAnimesFromCDN() {
   }
 }
 
+// ─── CDN'den HTML çek ─────────────────────────────────────────────────────────
+// Sunucu her başladığında CDN'den aniland.html'yi çekip diske yazar.
+// Böylece Render deploy olmadan bile CDN'deki yeni HTML yayına girer.
+const CDN_HTML_URL = process.env.CDN_HTML_URL || 'https://cdn.aniland.net/aniland.html';
+
+async function syncHtmlFromCDN() {
+  try {
+    console.log('[AniLand] aniland.html CDN\'den çekiliyor...');
+    const res = await new Promise((resolve, reject) => {
+      https.get(CDN_HTML_URL, r => resolve(r)).on('error', reject);
+    });
+    // CDN 200 dışı dönerse mevcut dosyayı koruyalım
+    if (res.statusCode !== 200) {
+      console.warn(`[AniLand] ⚠️  HTML CDN yanıtı: ${res.statusCode}, mevcut dosya korundu.`);
+      res.resume();
+      return;
+    }
+    const chunks = [];
+    for await (const chunk of res) chunks.push(chunk);
+    fs.writeFileSync(HTML_FILE, Buffer.concat(chunks), 'utf8');
+    console.log('[AniLand] ✅ aniland.html CDN\'den alındı.');
+  } catch (e) {
+    console.error('[AniLand] ❌ HTML CDN sync hatası:', e.message);
+  }
+}
+
+// ─── Keep-alive pinger ────────────────────────────────────────────────────────
+// Render free plan 15 dk isteğsiz kalınca uyutuyor.
+// Her 14 dakikada bir kendi /api/settings endpoint'ine istek atarak uyanık tutar.
+const SELF_URL = process.env.RENDER_EXTERNAL_URL || process.env.SELF_URL || '';
+const PING_INTERVAL_MS = 14 * 60 * 1000; // 14 dakika
+
+function startKeepAlive() {
+  if (!SELF_URL) {
+    console.warn('[Keep-alive] ⚠️  RENDER_EXTERNAL_URL env tanımlı değil, keep-alive devre dışı.');
+    console.warn('[Keep-alive]    Render dashboard\'dan RENDER_EXTERNAL_URL değişkenini ekleyin.');
+    return;
+  }
+  const pingUrl = `${SELF_URL.replace(/\/$/, '')}/api/settings`;
+  setInterval(() => {
+    https.get(pingUrl, (r) => {
+      console.log(`[Keep-alive] 🏓 Ping → ${r.statusCode}`);
+      r.resume(); // response body'yi tüket, bağlantıyı kapat
+    }).on('error', (e) => {
+      console.warn('[Keep-alive] ❌ Ping hatası:', e.message);
+    });
+  }, PING_INTERVAL_MS);
+  console.log(`[Keep-alive] ✅ Aktif → her 14 dakikada bir ${pingUrl}`);
+}
+
 async function startServer() {
   await connectDB();
   await ensureAdminExists();
   await syncAnimesFromCDN();
+  await syncHtmlFromCDN();
   server.listen(PORT, "0.0.0.0", () => {
     console.log(`\n✅ AniLand backend çalışıyor → Port: ${PORT}`);
     console.log(`🌐 CORS origin: ${ALLOWED_ORIGIN}\n`);
+    startKeepAlive();
   });
 }
 
