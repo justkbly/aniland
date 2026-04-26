@@ -2301,6 +2301,13 @@ if (WebSocketServer) {
 }
 
 // ─── Başlat ───────────────────────────────────────────────────────────────────
+// Banner/cover URL'lerini normalize et: sadece dosya adı varsa tam URL'e çevir
+function normalizeImageUrl(url) {
+  if (!url) return url;
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return url;
+  return 'https://image.tmdb.org/t/p/original/' + url;
+}
+
 async function syncAnimesFromCDN() {
   try {
     console.log('[AniLand] animes.json CDN\'den çekiliyor...');
@@ -2309,11 +2316,31 @@ async function syncAnimesFromCDN() {
     });
     const chunks = [];
     for await (const chunk of res) chunks.push(chunk);
-    fs.writeFileSync(ANIMES_FILE, Buffer.concat(chunks), 'utf8');
-    console.log('[AniLand] ✅ animes.json CDN\'den alındı.');
+    const raw = Buffer.concat(chunks).toString('utf8');
+
+    // Görsel URL'lerini normalize et
+    let animes = JSON.parse(raw);
+    animes = animes.map(a => ({
+      ...a,
+      bannerImage: normalizeImageUrl(a.bannerImage),
+      coverImage:  normalizeImageUrl(a.coverImage),
+    }));
+
+    fs.writeFileSync(ANIMES_FILE, JSON.stringify(animes, null, 2), 'utf8');
+    console.log(`[AniLand] ✅ animes.json CDN'den alındı. (${animes.length} anime)`);
   } catch (e) {
     console.error('[AniLand] ❌ CDN sync hatası:', e.message);
   }
+}
+
+// CDN'den periyodik yenileme (her 6 saatte bir)
+const CDN_SYNC_INTERVAL_MS = 6 * 60 * 60 * 1000;
+function startCDNSync() {
+  setInterval(async () => {
+    console.log('[AniLand] Periyodik CDN sync başlatıldı...');
+    await syncAnimesFromCDN();
+  }, CDN_SYNC_INTERVAL_MS);
+  console.log('[AniLand] ✅ CDN sync her 6 saatte bir çalışacak.');
 }
 
 const CDN_HTML_URL = process.env.CDN_HTML_URL || 'https://cdn.aniland.net/aniland.html';
@@ -2359,14 +2386,20 @@ function startKeepAlive() {
 }
 
 async function startServer() {
-  await connectDB();
-  await ensureAdminExists();
+  // MongoDB opsiyonel — bağlanamasa da sunucu çalışmaya devam eder
+  try {
+    await connectDB();
+    await ensureAdminExists();
+  } catch (e) {
+    console.warn('[AniLand] ⚠️  MongoDB bağlantısı kurulamadı, kullanıcı işlemleri devre dışı:', e.message);
+  }
   await syncAnimesFromCDN();
   await syncHtmlFromCDN();
   server.listen(PORT, "0.0.0.0", () => {
     console.log('\n✅ AniLand backend calisiyor -> Port: ' + PORT);
     console.log('🌐 CORS origin: ' + ALLOWED_ORIGIN + '\n');
     startKeepAlive();
+    startCDNSync();
   });
 }
 
