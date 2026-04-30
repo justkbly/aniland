@@ -1894,7 +1894,6 @@ const server = http.createServer(async (req, res) => {
   // Dosya servisi: temiz URL → disk dosyası
   const htmlServe = {
     '/':       HTML_FILE,
-    '/admin':  ADMIN_FILE,
     '/anime':  ANIME_FILE,
     '/sezon':  SEZON_FILE,
     '/takvim': TAKVIM_FILE,
@@ -1915,6 +1914,24 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(301, { ...corsHeaders(), 'Location': htmlRedirects[url] });
       return res.end();
     }
+    if (url === '/admin') {
+      return new Promise((resolve) => {
+        https.get(CDN_ADMIN_URL, (cdnRes) => {
+          if (cdnRes.statusCode !== 200) {
+            cdnRes.resume();
+            json(res, 502, { error: 'Admin sayfası CDN\'den alınamadı.' });
+            return resolve();
+          }
+          res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+          cdnRes.pipe(res);
+          cdnRes.on('end', resolve);
+        }).on('error', (e) => {
+          json(res, 502, { error: 'CDN bağlantı hatası: ' + e.message });
+          resolve();
+        });
+      });
+    }
+
     if (url in htmlServe) {
       const html = getHtml(htmlServe[url]);
       if (!html) { json(res, 404, { error: 'Sayfa bulunamadı.' }); return; }
