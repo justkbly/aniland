@@ -119,6 +119,7 @@ const FOLLOWS_FILE  = path.join(__dirname, 'follows.json');
 const NOTIFICATIONS_FILE = path.join(__dirname, 'notifications.json');
 const SETTINGS_FILE = path.join(__dirname, 'settings.json');
 const HTML_FILE     = path.join(__dirname, 'aniland.html');
+const ADMIN_FILE    = path.join(__dirname, 'admin.html');
 const ANIME_FILE    = path.join(__dirname, 'anime.html');
 const SEZON_FILE    = path.join(__dirname, 'sezon.html');
 const TAKVIM_FILE   = path.join(__dirname, 'takvim.html');
@@ -1892,7 +1893,7 @@ const server = http.createServer(async (req, res) => {
   // Dosya servisi: temiz URL → disk dosyası
   const htmlServe = {
     '/':       HTML_FILE,
-    '/admin':  HTML_FILE,
+    '/admin':  ADMIN_FILE,
     '/anime':  ANIME_FILE,
     '/sezon':  SEZON_FILE,
     '/takvim': TAKVIM_FILE,
