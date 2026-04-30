@@ -1195,8 +1195,9 @@ const routes = {
     const session = getSession(getToken(req));
     if (!session || session.role !== 'admin')
       return json(res, 403, { error: 'Yetki yok.' });
-    const results = { html: false, animes: false };
+    const results = { html: false, admin: false, animes: false };
     try { await syncHtmlFromCDN();   results.html   = true; } catch (e) { console.error('[sync-cdn] HTML hatası:', e.message); }
+    try { await syncAdminFromCDN();  results.admin  = true; } catch (e) { console.error('[sync-cdn] Admin HTML hatası:', e.message); }
     try { await syncAnimesFromCDN(); results.animes = true; } catch (e) { console.error('[sync-cdn] Animes hatası:', e.message); }
     return json(res, 200, { ok: true, results });
   },
@@ -2317,7 +2318,28 @@ async function syncAnimesFromCDN() {
   }
 }
 
-const CDN_HTML_URL = process.env.CDN_HTML_URL || 'https://cdn.aniland.net/aniland.html';
+const CDN_HTML_URL   = process.env.CDN_HTML_URL   || 'https://cdn.aniland.net/aniland.html';
+const CDN_ADMIN_URL  = process.env.CDN_ADMIN_URL  || 'https://cdn.aniland.net/admin.html';
+
+async function syncAdminFromCDN() {
+  try {
+    console.log('[AniLand] admin.html CDN\'den çekiliyor...');
+    const res = await new Promise((resolve, reject) => {
+      https.get(CDN_ADMIN_URL, r => resolve(r)).on('error', reject);
+    });
+    if (res.statusCode !== 200) {
+      console.warn(`[AniLand] ⚠️  Admin HTML CDN yaniti: ${res.statusCode}, mevcut dosya korundu.`);
+      res.resume();
+      return;
+    }
+    const chunks = [];
+    for await (const chunk of res) chunks.push(chunk);
+    fs.writeFileSync(ADMIN_FILE, Buffer.concat(chunks), 'utf8');
+    console.log('[AniLand] ✅ admin.html CDN\'den alindi.');
+  } catch (e) {
+    console.error('[AniLand] ❌ Admin HTML CDN sync hatasi:', e.message);
+  }
+}
 
 async function syncHtmlFromCDN() {
   try {
@@ -2364,6 +2386,7 @@ async function startServer() {
   await ensureAdminExists();
   await syncAnimesFromCDN();
   await syncHtmlFromCDN();
+  await syncAdminFromCDN();
   server.listen(PORT, "0.0.0.0", () => {
     console.log('\n✅ AniLand backend calisiyor -> Port: ' + PORT);
     console.log('🌐 CORS origin: ' + ALLOWED_ORIGIN + '\n');
