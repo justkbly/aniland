@@ -1915,6 +1915,12 @@ const server = http.createServer(async (req, res) => {
       return res.end();
     }
     if (url === '/admin') {
+      const html = getHtml(ADMIN_FILE);
+      if (html) {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+        return res.end(html);
+      }
+      // Local dosya yoksa CDN'e düş
       return new Promise((resolve) => {
         https.get(CDN_ADMIN_URL, (cdnRes) => {
           if (cdnRes.statusCode !== 200) {
