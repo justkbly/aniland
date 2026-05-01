@@ -119,7 +119,6 @@ const FOLLOWS_FILE  = path.join(__dirname, 'follows.json');
 const NOTIFICATIONS_FILE = path.join(__dirname, 'notifications.json');
 const SETTINGS_FILE = path.join(__dirname, 'settings.json');
 const HTML_FILE     = path.join(__dirname, 'aniland.html');
-const ADMIN_FILE    = path.join(__dirname, 'admin.html');
 const ANIME_FILE    = path.join(__dirname, 'anime.html');
 const SEZON_FILE    = path.join(__dirname, 'sezon.html');
 const TAKVIM_FILE   = path.join(__dirname, 'takvim.html');
@@ -1195,9 +1194,8 @@ const routes = {
     const session = getSession(getToken(req));
     if (!session || session.role !== 'admin')
       return json(res, 403, { error: 'Yetki yok.' });
-    const results = { html: false, admin: false, animes: false };
+    const results = { html: false, animes: false };
     try { await syncHtmlFromCDN();   results.html   = true; } catch (e) { console.error('[sync-cdn] HTML hatası:', e.message); }
-    try { await syncAdminFromCDN();  results.admin  = true; } catch (e) { console.error('[sync-cdn] Admin HTML hatası:', e.message); }
     try { await syncAnimesFromCDN(); results.animes = true; } catch (e) { console.error('[sync-cdn] Animes hatası:', e.message); }
     return json(res, 200, { ok: true, results });
   },
@@ -1914,29 +1912,7 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(301, { ...corsHeaders(), 'Location': htmlRedirects[url] });
       return res.end();
     }
-    if (url === '/admin') {
-      const html = getHtml(ADMIN_FILE);
-      if (html) {
-        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
-        return res.end(html);
-      }
-      // Local dosya yoksa CDN'e düş
-      return new Promise((resolve) => {
-        https.get(CDN_ADMIN_URL, (cdnRes) => {
-          if (cdnRes.statusCode !== 200) {
-            cdnRes.resume();
-            json(res, 502, { error: 'Admin sayfası CDN\'den alınamadı.' });
-            return resolve();
-          }
-          res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
-          cdnRes.pipe(res);
-          cdnRes.on('end', resolve);
-        }).on('error', (e) => {
-          json(res, 502, { error: 'CDN bağlantı hatası: ' + e.message });
-          resolve();
-        });
-      });
-    }
+
 
     if (url in htmlServe) {
       const html = getHtml(htmlServe[url]);
@@ -2342,27 +2318,6 @@ async function syncAnimesFromCDN() {
 }
 
 const CDN_HTML_URL   = process.env.CDN_HTML_URL   || 'https://cdn.aniland.net/aniland.html';
-const CDN_ADMIN_URL  = process.env.CDN_ADMIN_URL  || 'https://cdn.aniland.net/admin.html';
-
-async function syncAdminFromCDN() {
-  try {
-    console.log('[AniLand] admin.html CDN\'den çekiliyor...');
-    const res = await new Promise((resolve, reject) => {
-      https.get(CDN_ADMIN_URL, r => resolve(r)).on('error', reject);
-    });
-    if (res.statusCode !== 200) {
-      console.warn(`[AniLand] ⚠️  Admin HTML CDN yaniti: ${res.statusCode}, mevcut dosya korundu.`);
-      res.resume();
-      return;
-    }
-    const chunks = [];
-    for await (const chunk of res) chunks.push(chunk);
-    fs.writeFileSync(ADMIN_FILE, Buffer.concat(chunks), 'utf8');
-    console.log('[AniLand] ✅ admin.html CDN\'den alindi.');
-  } catch (e) {
-    console.error('[AniLand] ❌ Admin HTML CDN sync hatasi:', e.message);
-  }
-}
 
 async function syncHtmlFromCDN() {
   try {
@@ -2409,7 +2364,6 @@ async function startServer() {
   await ensureAdminExists();
   await syncAnimesFromCDN();
   await syncHtmlFromCDN();
-  await syncAdminFromCDN();
   server.listen(PORT, "0.0.0.0", () => {
     console.log('\n✅ AniLand backend calisiyor -> Port: ' + PORT);
     console.log('🌐 CORS origin: ' + ALLOWED_ORIGIN + '\n');
