@@ -1189,14 +1189,35 @@ const routes = {
     });
   },
 
-  // POST /api/admin/sync-cdn — CDN'den HTML ve animes.json'u yeniden çeker (admin only)
+  // POST /api/admin/sync-cdn — CDN'den dosya çeker (admin only)
+  // Body: { file: 'aniland'|'anime'|'sezon'|'takvim'|'top100'|'animesjson' }
+  // Body yoksa (eski/gizli tetikleyici): tüm dosyaları çeker
   'POST /api/admin/sync-cdn': async (req, res) => {
     const session = getSession(getToken(req));
     if (!session || session.role !== 'admin')
       return json(res, 403, { error: 'Yetki yok.' });
-    const results = { html: false, animes: false };
-    try { await syncHtmlFromCDN();   results.html   = true; } catch (e) { console.error('[sync-cdn] HTML hatası:', e.message); }
-    try { await syncAnimesFromCDN(); results.animes = true; } catch (e) { console.error('[sync-cdn] Animes hatası:', e.message); }
+
+    const fileKey = req.body && req.body.file;
+
+    // Tek dosya çek
+    if (fileKey) {
+      if (!CDN_FILE_MAP[fileKey])
+        return json(res, 400, { ok: false, error: 'Bilinmeyen dosya: ' + fileKey });
+      try {
+        await syncFileFromCDN(fileKey);
+        return json(res, 200, { ok: true, file: fileKey });
+      } catch (e) {
+        console.error('[sync-cdn] Hata:', e.message);
+        return json(res, 500, { ok: false, error: e.message });
+      }
+    }
+
+    // Toplu çek (body yoksa — eski/gizli tetikleyici uyumluluğu)
+    const results = {};
+    for (const key of Object.keys(CDN_FILE_MAP)) {
+      try { await syncFileFromCDN(key); results[key] = true; }
+      catch (e) { console.error('[sync-cdn] ' + key + ' hatası:', e.message); results[key] = false; }
+    }
     return json(res, 200, { ok: true, results });
   },
 
@@ -2302,42 +2323,38 @@ if (WebSocketServer) {
 }
 
 // ─── Başlat ───────────────────────────────────────────────────────────────────
-async function syncAnimesFromCDN() {
-  try {
-    console.log('[AniLand] animes.json CDN\'den çekiliyor...');
-    const res = await new Promise((resolve, reject) => {
-      https.get('https://cdn.aniland.net/animes.json', r => resolve(r)).on('error', reject);
-    });
-    const chunks = [];
-    for await (const chunk of res) chunks.push(chunk);
-    fs.writeFileSync(ANIMES_FILE, Buffer.concat(chunks), 'utf8');
-    console.log('[AniLand] ✅ animes.json CDN\'den alındı.');
-  } catch (e) {
-    console.error('[AniLand] ❌ CDN sync hatası:', e.message);
+const CDN_BASE     = 'https://cdn.aniland.net';
+const CDN_HTML_URL = process.env.CDN_HTML_URL || CDN_BASE + '/aniland.html';
+
+const CDN_FILE_MAP = {
+  'aniland':    { cdnUrl: CDN_HTML_URL,                     localFile: HTML_FILE },
+  'anime':      { cdnUrl: CDN_BASE + '/anime.html',         localFile: path.join(__dirname, 'anime.html') },
+  'sezon':      { cdnUrl: CDN_BASE + '/sezon.html',         localFile: path.join(__dirname, 'sezon.html') },
+  'takvim':     { cdnUrl: CDN_BASE + '/takvim.html',        localFile: path.join(__dirname, 'takvim.html') },
+  'top100':     { cdnUrl: CDN_BASE + '/top100.html',        localFile: path.join(__dirname, 'top100.html') },
+  'animesjson': { cdnUrl: CDN_BASE + '/animes.json',        localFile: ANIMES_FILE },
+};
+
+async function syncFileFromCDN(key) {
+  const entry = CDN_FILE_MAP[key];
+  if (!entry) throw new Error('Bilinmeyen dosya key: ' + key);
+  console.log(`[AniLand] ${key} CDN'den çekiliyor... (${entry.cdnUrl})`);
+  const res = await new Promise((resolve, reject) => {
+    https.get(entry.cdnUrl, r => resolve(r)).on('error', reject);
+  });
+  if (res.statusCode !== 200) {
+    res.resume();
+    throw new Error(`CDN HTTP ${res.statusCode} — ${key}`);
   }
+  const chunks = [];
+  for await (const chunk of res) chunks.push(chunk);
+  fs.writeFileSync(entry.localFile, Buffer.concat(chunks), 'utf8');
+  console.log(`[AniLand] ✅ ${key} CDN'den alındı.`);
 }
 
-const CDN_HTML_URL   = process.env.CDN_HTML_URL   || 'https://cdn.aniland.net/aniland.html';
-
-async function syncHtmlFromCDN() {
-  try {
-    console.log('[AniLand] aniland.html CDN\'den çekiliyor...');
-    const res = await new Promise((resolve, reject) => {
-      https.get(CDN_HTML_URL, r => resolve(r)).on('error', reject);
-    });
-    if (res.statusCode !== 200) {
-      console.warn(`[AniLand] ⚠️  HTML CDN yaniti: ${res.statusCode}, mevcut dosya korundu.`);
-      res.resume();
-      return;
-    }
-    const chunks = [];
-    for await (const chunk of res) chunks.push(chunk);
-    fs.writeFileSync(HTML_FILE, Buffer.concat(chunks), 'utf8');
-    console.log('[AniLand] ✅ aniland.html CDN\'den alindi.');
-  } catch (e) {
-    console.error('[AniLand] ❌ HTML CDN sync hatasi:', e.message);
-  }
-}
+// Geriye dönük uyumluluk
+async function syncHtmlFromCDN()   { await syncFileFromCDN('aniland'); }
+async function syncAnimesFromCDN() { await syncFileFromCDN('animesjson'); }
 
 const SELF_URL = process.env.RENDER_EXTERNAL_URL || process.env.SELF_URL || '';
 const PING_INTERVAL_MS = 14 * 60 * 1000;
