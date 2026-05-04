@@ -2252,7 +2252,12 @@ const server = http.createServer(async (req, res) => {
     const { spawn } = require('child_process');
     const py = spawn('python', [require('path').join(__dirname, 'a.py'), animeUrl], {
       cwd: __dirname,
-      env: { ...process.env, PYTHONIOENCODING: 'utf-8', PYTHONUNBUFFERED: '1' },
+      env: {
+        ...process.env,
+        PYTHONIOENCODING: 'utf-8',
+        PYTHONUNBUFFERED: '1',
+        SERVER_URL: `http://localhost:${PORT}`,
+      },
     });
 
     py.stdout.setEncoding('utf-8');
