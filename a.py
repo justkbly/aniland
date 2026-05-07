@@ -191,6 +191,7 @@ def tau_to_mp4(embed_url, preferred_quality=None, use_playwright=True):
 # ══════════════════════════════════════════════════════════════════════════════
 
 def create_driver(headless=True):
+    import shutil
     options = Options()
     if headless:
         options.add_argument("--headless=new")
@@ -200,6 +201,37 @@ def create_driver(headless=True):
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
     options.add_experimental_option("useAutomationExtension", False)
     options.set_capability("goog:loggingPrefs", {"performance": "ALL"})
+
+    # Chrome binary'sini bul (Render.com + Puppeteer Chromium desteği)
+    import glob
+    chrome_path = (
+        shutil.which("google-chrome-stable") or
+        shutil.which("google-chrome") or
+        shutil.which("chromium-browser") or
+        shutil.which("chromium")
+    )
+    if not chrome_path:
+        # Sistem sabit yolları
+        for p in ["/usr/bin/google-chrome-stable", "/usr/bin/google-chrome", "/usr/bin/chromium"]:
+            if os.path.exists(p):
+                chrome_path = p
+                break
+    if not chrome_path:
+        # Puppeteer'ın kurduğu Chromium (~/.cache/puppeteer/chrome/.../chrome)
+        patterns = [
+            os.path.expanduser("~/.cache/puppeteer/chrome/linux*/chrome-linux*/chrome"),
+            os.path.expanduser("~/.cache/puppeteer/chrome/linux*/chrome-linux*/google-chrome"),
+            "/root/.cache/puppeteer/chrome/linux*/chrome-linux*/chrome",
+            "/home/**/.cache/puppeteer/chrome/linux*/chrome-linux*/chrome",
+        ]
+        for pattern in patterns:
+            matches = glob.glob(pattern, recursive=True)
+            if matches:
+                chrome_path = matches[0]
+                break
+    if chrome_path:
+        options.binary_location = chrome_path
+
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
     return driver
