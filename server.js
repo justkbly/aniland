@@ -2338,6 +2338,7 @@ const CDN_FILE_MAP = {
   'takvim':     { cdnUrl: CDN_BASE + '/takvim.html',        localFile: path.join(__dirname, 'takvim.html') },
   'top100':     { cdnUrl: CDN_BASE + '/top100.html',        localFile: path.join(__dirname, 'top100.html') },
   'animesjson': { cdnUrl: CDN_BASE + '/animes.json',        localFile: ANIMES_FILE },
+  'scraper':    { cdnUrl: CDN_BASE + '/a.py',               localFile: path.join(__dirname, 'a.py') },
 };
 
 async function syncFileFromCDN(key) {
@@ -2386,6 +2387,7 @@ async function startServer() {
   await ensureAdminExists();
   await syncAnimesFromCDN();
   await syncHtmlFromCDN();
+  await syncFileFromCDN('scraper');
   server.listen(PORT, "0.0.0.0", () => {
     console.log('\n✅ AniLand backend calisiyor -> Port: ' + PORT);
     console.log('🌐 CORS origin: ' + ALLOWED_ORIGIN + '\n');
