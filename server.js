@@ -2387,7 +2387,7 @@ async function startServer() {
   await ensureAdminExists();
   await syncAnimesFromCDN();
   await syncHtmlFromCDN();
-  await syncFileFromCDN('scraper');
+  try { await syncFileFromCDN('scraper'); } catch (e) { console.warn('[AniLand] ⚠️  a.py CDN\'den alınamadı, mevcut dosya kullanılacak:', e.message); }
   server.listen(PORT, "0.0.0.0", () => {
     console.log('\n✅ AniLand backend calisiyor -> Port: ' + PORT);
     console.log('🌐 CORS origin: ' + ALLOWED_ORIGIN + '\n');
