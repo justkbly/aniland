@@ -2,8 +2,8 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AniLand — Türkçe Anime İzleme Platformu</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>AniLand - Türkçe Anime Platformu</title>
 <meta name="description" content="AniLand, Türkçe altyazılı ve dublajlı anime izleyebileceğin ücretsiz platformdur. Sezon takibi, Top 100 listesi ve çok daha fazlası.">
 <meta name="keywords" content="anime izle, türkçe anime, türkçe altyazı, anime platformu, anime listesi, aniland">
 <meta name="robots" content="index, follow">
@@ -1867,7 +1867,7 @@
 
   /* ─── MOBİL OYNATICI ─── */
   @media (max-width: 768px) {
-    /* Oynatıcı sayfası: üstten alta scroll */
+    /* ── PLAYER PAGE ── */
     .player-page {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -1877,69 +1877,46 @@
       -webkit-overflow-scrolling: touch;
     }
     .player-topbar {
-      padding: 0.5rem 0.85rem;
-      gap: 0.5rem;
-      height: 52px;
+      padding: 0 0.85rem;
+      height: 50px;
       position: sticky; top: 0; z-index: 20;
+      gap: 0.5rem;
     }
-    .player-topbar-title { font-size: 0.9rem; }
+    .player-topbar-title { font-size: 0.88rem; }
     .player-topbar-sub { display: none; }
+    .player-layout { flex-direction: column; overflow: visible; min-height: auto; }
+    .player-main { padding: 0; overflow-y: visible; }
 
-    /* Layout: dikey */
-    .player-layout {
-      flex-direction: column;
-      overflow: visible;
-      min-height: auto;
-    }
-    .player-main {
-      padding: 0;
-      overflow-y: visible;
-    }
-
-    /* Video tam genişlik */
+    /* Video: tam genişlik, köşesiz */
     .video-wrap {
       border-radius: 0;
       box-shadow: none;
       aspect-ratio: 16/9;
       width: 100%;
+      background: #000;
     }
 
-    /* Custom player kontrolleri */
-    #customPlayerUI .cp-controls {
-      padding: 0 0.6rem 0.5rem;
-      gap: 6px;
-    }
-    /* Sessiz tuşu yan vol slider mobilde gizle */
+    /* Kontroller: dokunmatik için büyütülmüş */
+    #customPlayerUI .cp-controls { padding: 0 0.5rem 0.6rem; gap: 4px; }
     .cp-vol-slider { display: none; }
-    /* Hız seçici gizle */
     .cp-speed { display: none; }
-    /* Pip divleri gizle */
     .cp-pip { display: none; }
-    /* Buton boyutları büyüt — dokunmatik için */
-    .cp-btn { width: 42px; height: 42px; }
-    /* Tam ekran butonu her zaman sağda görünsün */
+    .cp-btn { width: 44px; height: 44px; border-radius: 50%; }
     .cp-spacer { flex: 1; min-width: 4px; }
     #cpFullscreen { flex-shrink: 0; }
+    .cp-progress-wrap { margin: 0 0.2rem; }
 
-    /* Anime bilgi satırı */
-    .anime-info-bar {
-      padding: 0.65rem 0.9rem;
-      flex-wrap: wrap;
-      gap: 0.4rem;
-    }
-    .anime-info-title { font-size: 0.95rem; }
+    /* Bilgi barı */
+    .anime-info-bar { padding: 0.6rem 0.9rem; flex-wrap: wrap; gap: 0.4rem; }
+    .anime-info-title { font-size: 0.9rem; }
     .info-actions { gap: 0.4rem; flex-wrap: wrap; }
-    .action-btn { padding: 0.35rem 0.65rem; font-size: 0.78rem; }
+    .action-btn { padding: 0.38rem 0.7rem; font-size: 0.78rem; min-height: 40px; }
 
-    /* Sub seçici */
-    .sub-selector {
-      padding: 0.4rem 0.9rem;
-      flex-wrap: wrap;
-      gap: 0.35rem;
-    }
+    /* Çevirmen/sub seçici */
+    .sub-selector { padding: 0.4rem 0.9rem; flex-wrap: wrap; gap: 0.35rem; }
     #epSubSelector { padding: 0.4rem 0.9rem; }
 
-    /* Bölüm sidebar: yatay strip */
+    /* Bölüm listesi: yatay scroll strip */
     .player-sidebar {
       width: 100%;
       border-left: none;
@@ -1947,47 +1924,44 @@
       flex-direction: column;
       max-height: none;
     }
-    .sidebar-header { padding: 0.7rem 0.9rem 0.5rem; font-size: 0.95rem; }
+    .sidebar-header { padding: 0.7rem 0.9rem 0.4rem; font-size: 0.9rem; }
     .sidebar-scroll {
       display: flex;
       flex-direction: row;
       overflow-x: auto;
       overflow-y: hidden;
       flex: none;
-      padding: 0.6rem 0.9rem;
+      padding: 0.5rem 0.9rem 0.75rem;
       gap: 0.5rem;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
+      scroll-snap-type: x mandatory;
     }
     .sidebar-scroll::-webkit-scrollbar { display: none; }
     .sidebar-card {
       flex-direction: column;
-      width: 100px;
+      width: 96px;
       flex-shrink: 0;
       padding: 0;
       border-radius: 8px;
       overflow: hidden;
       margin-bottom: 0;
       border: 1px solid rgba(255,255,255,0.07);
+      scroll-snap-align: start;
     }
-    .sidebar-thumb {
-      width: 100%;
-      height: 58px;
-      border-radius: 0;
-      min-width: unset;
-    }
-    .sidebar-info { padding: 0.3rem 0.4rem; }
-    .sidebar-title { font-size: 0.72rem; white-space: normal; line-height: 1.2; }
+    .sidebar-thumb { width: 100%; height: 56px; border-radius: 0; min-width: unset; }
+    .sidebar-info { padding: 0.28rem 0.4rem; }
+    .sidebar-title { font-size: 0.7rem; white-space: normal; line-height: 1.2; }
     .sidebar-ep { display: none; }
 
-    /* Rating + yorumlar padding */
+    /* Rating + yorumlar */
     .rating-section { padding: 1rem 0.9rem; }
-    .comments-section, #commentsSection { padding: 0 0.9rem 1.5rem; }
+    .comments-section, #commentsSection { padding: 0 0.9rem 5rem; }
 
-    /* WT paneli: tam genişlik, alt */
+    /* Watch Together: tam genişlik */
     .wt-panel-wrap {
       width: 100% !important;
-      height: 380px !important;
+      height: 360px !important;
       border-left: none;
       border-top: 1px solid rgba(0,212,180,0.15);
     }
@@ -2321,55 +2295,60 @@
   }
 
   @media (max-width: 768px) {
-    /* ── NAV — mobilde tamamen gizle ── */
+    /* ── NAV ── */
     nav { display: none !important; }
     .mobile-nav { display: none !important; }
 
     /* ── LOGO ── */
-    .logo-img { height: 56px; width: auto; object-fit: contain; }
+    .logo-img { height: 52px; }
 
     /* ── SECTIONS ── */
     section { padding: 1.2rem 0 0.8rem; }
     .section-header { padding: 0 1rem; margin-bottom: 0.6rem; }
-    .section-title { font-size: 1rem; letter-spacing: 0.5px; }
+    .section-title { font-size: 1.05rem; letter-spacing: 0.5px; }
     .section-title::before { height: 1rem; }
-    .see-all-link { font-size: 0.75rem; }
+    .see-all-link { font-size: 0.75rem; min-height: 36px; display: flex; align-items: center; padding: 0 0.5rem; }
 
     /* ── ANİME GRID → yatay carousel ── */
     .anime-grid {
       display: flex !important;
       flex-direction: row;
       overflow-x: auto;
-      gap: 0.7rem;
-      padding: 0 1rem 0.75rem;
+      gap: 0.65rem;
+      padding: 0.2rem 1rem 0.9rem;
       scroll-snap-type: x mandatory;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
       grid-template-columns: unset;
     }
     .anime-grid::-webkit-scrollbar { display: none; }
-    .anime-card { flex-shrink: 0; width: 120px; scroll-snap-align: start; border-radius: 10px; }
-    .anime-card:active { transform: scale(0.95); }
-    .card-title { font-size: 0.75rem; line-height: 1.3; }
-    .card-meta { font-size: 0.63rem; }
-    .card-info { padding: 0.5rem 0.45rem; }
-    .card-score { font-size: 0.63rem; padding: 0.18rem 0.35rem; top: 0.3rem; right: 0.3rem; }
-    .card-overlay { opacity: 1; background: linear-gradient(to top, rgba(7,7,15,0.92) 0%, rgba(7,7,15,0.1) 55%, transparent 100%); }
+    .anime-card {
+      flex-shrink: 0;
+      width: 118px;
+      scroll-snap-align: start;
+      border-radius: 10px;
+    }
+    .anime-card:active { transform: scale(0.94); transition: transform 0.1s; }
+    .card-title { font-size: 0.74rem; line-height: 1.3; }
+    .card-meta { font-size: 0.62rem; }
+    .card-info { padding: 0.45rem 0.4rem; }
+    .card-score { font-size: 0.62rem; padding: 0.16rem 0.32rem; top: 0.28rem; right: 0.28rem; }
+    .card-overlay { opacity: 1; background: linear-gradient(to top, rgba(7,7,15,0.93) 0%, rgba(7,7,15,0.08) 55%, transparent 100%); }
 
     /* ── HERO ── */
-    .hero { height: 50svh; min-height: 300px; padding: 0 1rem 2rem; }
-    .hero-title { font-size: clamp(1.8rem, 8.5vw, 2.8rem); }
+    .hero { height: 72svh; min-height: 420px; padding: 4rem 1rem 2rem; align-items: center; }
+    .hero-title { font-size: clamp(1.7rem, 8vw, 2.6rem); }
     .hero-sub { font-size: 0.78rem; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .hero-cta { gap: 0.5rem; }
-    .hero-btn { padding: 0.6rem 1.1rem; font-size: 0.82rem; min-height: 44px; }
+    .hero-btn { padding: 0.65rem 1.15rem; font-size: 0.82rem; min-height: 44px; border-radius: 12px; }
     .hero-cards { gap: 0.6rem; }
-    .hero-card { width: 120px; flex-shrink: 0; }
+    .hero-card { width: 118px; flex-shrink: 0; }
 
     /* ── FEATURED ── */
-    .featured-row { grid-template-columns: 1fr; height: auto; max-height: none; padding: 1rem; gap: 0.75rem; }
+    .featured-row { grid-template-columns: 1fr; height: auto; max-height: none; padding: 0.9rem 1rem; gap: 0.7rem; }
     .featured-info { max-width: 100%; }
-    .featured-visual { height: 150px; max-height: 150px; border-radius: 10px; }
-    .featured-title { font-size: 1.6rem; }
+    .featured-visual { height: 145px; max-height: 145px; border-radius: 10px; }
+    .featured-title { font-size: 1.5rem; }
     .featured-desc { font-size: 0.8rem; -webkit-line-clamp: 2; line-clamp: 2; }
 
     /* ── DEVAM EDİLEN ── */
@@ -2377,8 +2356,8 @@
       display: flex !important;
       flex-direction: row;
       overflow-x: auto;
-      gap: 0.7rem;
-      padding: 0 1rem 0.75rem;
+      gap: 0.65rem;
+      padding: 0.2rem 1rem 0.9rem;
       scroll-snap-type: x mandatory;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
@@ -2389,23 +2368,24 @@
     /* ── SCHEDULE ── */
     .schedule-grid { grid-template-columns: repeat(3, 1fr); gap: 0.4rem; padding: 0 1rem; }
 
-    /* ── MODAL → ALT SHEET ── */
+    /* ── MODAl → ALT SHEET ── */
     .modal-backdrop { align-items: flex-end; }
     .modal {
       max-width: 100%; width: 100%;
-      border-radius: 20px 20px 0 0;
+      border-radius: 22px 22px 0 0;
       transform: translateY(100%);
-      padding: 1.5rem 1.25rem calc(env(safe-area-inset-bottom) + 1.5rem);
-      max-height: 92svh; overflow-y: auto;
+      padding: 1.5rem 1.25rem calc(env(safe-area-inset-bottom,0px) + 1.5rem);
+      max-height: 92svh;
+      overflow-y: auto;
     }
     .modal-backdrop.open .modal { transform: translateY(0); }
 
-    /* ── DETAIL PAGE ── */
+    /* ── ANIME DETAY ── */
     .detail-topbar { padding: 0 1rem; height: 52px; }
-    .detail-content { padding: 1rem 1rem 3rem; gap: 1rem; }
-    .detail-ep-grid { grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 0.4rem; }
-    .detail-actions { gap: 0.5rem; }
-    .detail-play-btn { width: 100%; justify-content: center; min-height: 44px; }
+    .detail-content { padding: 1rem 1rem 4rem; gap: 1rem; }
+    .detail-ep-grid { grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 0.4rem; }
+    .detail-actions { gap: 0.5rem; flex-wrap: wrap; }
+    .detail-play-btn { width: 100%; justify-content: center; min-height: 46px; border-radius: 12px; }
 
     /* ── ADMIN ── */
     .admin-topbar { padding: 0 1rem; height: 56px; }
@@ -2414,19 +2394,20 @@
     .admin-form-grid { grid-template-columns: 1fr; }
 
     /* ── FOOTER ── */
-    footer { padding: 2rem 1rem; }
+    footer { padding: 2rem 1rem 5rem; }
     .footer-grid { grid-template-columns: 1fr; gap: 1.5rem; }
     .footer-links-group { display: none; }
     .footer-brand { text-align: center; }
   }
 
   @media (max-width: 480px) {
-    .anime-card { width: 108px; }
-    .cw-card { width: 134px; }
-    .hero-card { width: 108px; }
-    section { padding: 1rem 0 0.7rem; }
-    .hero { height: 46svh; min-height: 280px; }
+    .anime-card { width: 105px; }
+    .cw-card { width: 132px; }
+    .hero-card { width: 105px; }
+    section { padding: 1rem 0 0.6rem; }
+    .hero { height: 70svh; min-height: 380px; padding: 3.5rem 1rem 2rem; align-items: center; }
     .schedule-grid { grid-template-columns: repeat(2, 1fr); }
+    .hero-btn { padding: 0.6rem 1rem; font-size: 0.8rem; }
   }
 
   /* ===== HAMBURGER MENU ===== */
@@ -2435,14 +2416,15 @@
     flex-direction: column;
     justify-content: center;
     gap: 5px;
-    width: 40px;
-    height: 40px;
+    width: 42px;
+    height: 42px;
     background: rgba(255,255,255,0.06);
     border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 10px;
+    border-radius: 12px;
     cursor: pointer;
-    padding: 8px;
+    padding: 9px;
     transition: all 0.25s;
+    -webkit-tap-highlight-color: transparent;
   }
   .hamburger:hover { background: rgba(0,201,174,0.15); border-color: rgba(0,201,174,0.4); }
   .hamburger-line {
@@ -2460,48 +2442,53 @@
   .mobile-nav {
     display: none;
     position: fixed;
-    top: 64px;
+    top: 0;
     left: 0;
     right: 0;
-    z-index: 99;
-    background: rgba(10,10,18,0.97);
-    backdrop-filter: blur(20px);
-    border-bottom: 1px solid rgba(0,245,212,0.12);
-    padding: 1rem 1.5rem 1.5rem;
-    transform: translateY(-110%);
-    transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+    bottom: 0;
+    z-index: 200;
+    background: rgba(7,7,15,0.97);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    padding: env(safe-area-inset-top,0px) 0 calc(env(safe-area-inset-bottom,0px) + 72px);
+    overflow-y: auto;
+    transform: translateX(-100%);
+    transition: transform 0.32s cubic-bezier(0.4,0,0.2,1);
   }
-  .mobile-nav.open { transform: translateY(0); }
+  .mobile-nav.open { transform: translateX(0); }
   .mobile-nav-links {
     list-style: none;
     display: flex;
     flex-direction: column;
     gap: 0;
-    margin-bottom: 1rem;
+    padding: 1rem 0;
   }
   .mobile-nav-links li a {
-    display: block;
-    padding: 0.85rem 0;
+    display: flex;
+    align-items: center;
+    padding: 1rem 1.5rem;
     color: rgba(232,232,245,0.75);
     text-decoration: none;
-    font-size: 1rem;
-    font-weight: 600;
-    letter-spacing: 1.5px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 2px;
     text-transform: uppercase;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-    transition: color 0.2s;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    transition: color 0.2s, background 0.2s;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 52px;
   }
   .mobile-nav-links li:last-child a { border-bottom: none; }
-  .mobile-nav-links li a:hover { color: var(--neon); }
+  .mobile-nav-links li a:active { background: rgba(0,212,180,0.08); color: var(--neon); }
   .mobile-search {
     display: flex;
     align-items: center;
     background: rgba(255,255,255,0.05);
     border: 1px solid rgba(0,245,212,0.2);
-    border-radius: 10px;
-    padding: 0.6rem 1rem;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
+    border-radius: 14px;
+    padding: 0.75rem 1.1rem;
+    gap: 0.6rem;
+    margin: 0.5rem 1.5rem 0;
   }
   .mobile-search input {
     flex: 1;
@@ -2510,13 +2497,13 @@
     outline: none;
     color: #e8e8f5;
     font-family: 'Rajdhani', sans-serif;
-    font-size: 1rem;
+    font-size: 1.05rem;
   }
   .mobile-search input::placeholder { color: var(--muted); }
 
-  body.light .mobile-nav { background: rgba(238,228,240,0.97); }
-  body.light .mobile-nav-links li a { color: rgba(42,26,46,0.65); border-bottom-color: rgba(180,140,180,0.12); }
-  body.light .mobile-nav-links li a:hover { color: var(--sakura); }
+  body.light .mobile-nav { background: rgba(238,228,245,0.98); }
+  body.light .mobile-nav-links li a { color: rgba(42,26,46,0.7); border-bottom-color: rgba(180,140,180,0.1); }
+  body.light .mobile-nav-links li a:active { color: var(--sakura); background: rgba(232,49,110,0.06); }
   body.light .mobile-search { background: rgba(220,200,225,0.35); border-color: rgba(200,150,200,0.3); }
   body.light .mobile-search input { color: #2a1a2e; }
   body.light .hamburger { background: rgba(200,160,210,0.2); border-color: rgba(200,160,210,0.3); }
@@ -3766,81 +3753,81 @@ body.light ::-webkit-scrollbar-thumb { background: rgba(232,49,110,0.2); }
 body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
 
 /* ─── MOBİL ALT NAV ─── */
-.mobile-bottom-nav {
-  display: none;
-}
-@media (max-width: 768px) {
-  /* Body padding: üstte sabit nav + altta sabit nav */
-  body { padding-top: env(safe-area-inset-top); padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
+.mobile-bottom-nav { display: none; }
 
-  /* Navbar logosu mobilde daha küçük — topbarlarda da bu değer geçerli */
-  .logo-img { height: 56px; width: auto; object-fit: contain; }
+@media (max-width: 768px) {
+  body { padding-top: env(safe-area-inset-top,0px); padding-bottom: calc(64px + env(safe-area-inset-bottom,0px)); }
+  .logo-img { height: 52px; }
 
   .mobile-bottom-nav {
     display: flex;
     position: fixed;
     bottom: 0; left: 0; right: 0;
-    height: 64px;
-    background: rgba(7,7,15,0.96);
-    backdrop-filter: blur(24px) saturate(160%);
-    -webkit-backdrop-filter: blur(24px) saturate(160%);
-    border-top: 1px solid rgba(0,212,180,0.12);
-    box-shadow: 0 -4px 24px rgba(0,0,0,0.4), 0 -1px 0 rgba(0,212,180,0.06);
+    height: calc(64px + env(safe-area-inset-bottom,0px));
+    background: rgba(7,7,15,0.97);
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    border-top: 1px solid rgba(0,212,180,0.1);
+    box-shadow: 0 -1px 0 rgba(0,212,180,0.06), 0 -8px 32px rgba(0,0,0,0.5);
     z-index: 150;
     align-items: stretch;
-    padding-bottom: env(safe-area-inset-bottom);
+    padding-bottom: env(safe-area-inset-bottom,0px);
     transition: transform 0.3s ease;
   }
   .mobile-bottom-nav.nav-scroll-hidden { transform: translateY(100%); }
+
   body.light .mobile-bottom-nav {
-    background: rgba(237,228,245,0.97);
-    border-top-color: rgba(180,100,200,0.15);
-    box-shadow: 0 -4px 20px rgba(80,40,120,0.08);
+    background: rgba(240,232,248,0.98);
+    border-top-color: rgba(180,100,200,0.12);
+    box-shadow: 0 -4px 20px rgba(80,40,120,0.07);
   }
+
   .mbn-btn {
     flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
+    gap: 3px;
     background: none;
     border: none;
     color: var(--muted);
     cursor: pointer;
     transition: color 0.2s, transform 0.15s;
     font-family: 'Rajdhani', sans-serif;
-    font-size: 0.62rem;
+    font-size: 0.6rem;
     font-weight: 700;
     letter-spacing: 0.8px;
     text-transform: uppercase;
     padding: 0;
     -webkit-tap-highlight-color: transparent;
     position: relative;
+    padding-bottom: 2px;
   }
+
+  /* Aktif göstergesi: üst çizgi */
   .mbn-btn::before {
     content: '';
     position: absolute;
     top: 0; left: 50%;
     transform: translateX(-50%) scaleX(0);
-    width: 24px; height: 2.5px;
+    width: 28px; height: 2.5px;
     background: var(--sakura);
     border-radius: 0 0 4px 4px;
-    transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1);
   }
   .mbn-btn.active::before { transform: translateX(-50%) scaleX(1); }
-  .mbn-btn svg { transition: transform 0.2s; }
-  .mbn-btn:active { transform: scale(0.93); }
+  .mbn-btn svg { transition: transform 0.2s; flex-shrink: 0; }
+  .mbn-btn:active { transform: scale(0.9); }
   .mbn-btn.active { color: var(--sakura); }
   .mbn-btn.active svg {
-    filter: drop-shadow(0 0 6px rgba(255,90,142,0.55));
+    filter: drop-shadow(0 0 5px rgba(255,90,142,0.5));
     transform: translateY(-1px);
   }
-  /* search butonunun active rengi neon */
   .mbn-btn#mbnSearch.active { color: var(--neon); }
   .mbn-btn#mbnSearch.active::before { background: var(--neon); }
-  .mbn-btn#mbnSearch.active svg { filter: drop-shadow(0 0 6px rgba(0,212,180,0.55)); }
-  /* profile: avatar mini chip when logged in */
+  .mbn-btn#mbnSearch.active svg { filter: drop-shadow(0 0 5px rgba(0,212,180,0.5)); }
+
   .mbn-avatar-dot {
     display: none;
     width: 6px; height: 6px;
@@ -3851,6 +3838,171 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     box-shadow: 0 0 6px rgba(0,212,180,0.7);
   }
   .mbn-avatar-dot.visible { display: block; }
+
+  /* ── AnimeciX tarzı Anime butonu aktif rengi ── */
+  .mbn-btn#mbnAnime.active { color: var(--neon); }
+  .mbn-btn#mbnAnime.active::before { background: var(--neon); }
+  .mbn-btn#mbnAnime.active svg { filter: drop-shadow(0 0 5px rgba(0,212,180,0.5)); }
+
+  /* ── Mobil: yatay kaydırmalı anime kartları (AnimeciX stili) ── */
+  .mob-scroll-section { margin: 0 0 1.4rem; }
+  .mob-scroll-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1rem 0.55rem;
+  }
+  .mob-scroll-title {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 1.05rem;
+    letter-spacing: 2.5px;
+    color: var(--text);
+  }
+  .mob-scroll-all {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--neon);
+    letter-spacing: 1px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .mob-scroll-row {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 0 1rem 0.5rem;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .mob-scroll-row::-webkit-scrollbar { display: none; }
+
+  /* ── Mobil genre pill bar ── */
+  .mob-pill-bar {
+    display: flex;
+    gap: 7px;
+    overflow-x: auto;
+    padding: 0.6rem 1rem 0.8rem;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .mob-pill-bar::-webkit-scrollbar { display: none; }
+  .mob-pill {
+    flex-shrink: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    color: var(--text-sub);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    padding: 5px 13px;
+    cursor: pointer;
+    transition: all 0.18s;
+    white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mob-pill.active,
+  .mob-pill:active {
+    background: var(--neon);
+    border-color: var(--neon);
+    color: #000;
+  }
+  body.light .mob-pill { background: rgba(220,200,230,0.4); border-color: rgba(180,140,180,0.2); color: rgba(42,26,46,0.6); }
+  body.light .mob-pill.active { background: var(--neon); border-color: var(--neon); color: #fff; }
+
+  /* ── Mobil liste öğesi (yeni bölümler) ── */
+  .mob-list-item {
+    display: flex;
+    gap: 10px;
+    padding: 9px 1rem;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.15s;
+  }
+  .mob-list-item:active { background: var(--surface); }
+  .mob-list-thumb {
+    width: 58px; height: 76px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    object-fit: cover;
+  }
+  .mob-list-body { flex: 1; min-width: 0; }
+  .mob-list-title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 3px;
+    letter-spacing: 0.3px;
+  }
+  .mob-list-sub { font-size: 0.74rem; color: var(--text-sub); margin-bottom: 5px; }
+  .mob-list-tags { display: flex; gap: 5px; flex-wrap: wrap; }
+  .mob-list-tag {
+    font-size: 0.65rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-sub);
+    padding: 2px 7px;
+    border-radius: 4px;
+    letter-spacing: 0.4px;
+  }
+  .mob-list-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+    flex-shrink: 0;
+  }
+  .mob-new-badge {
+    font-size: 0.6rem;
+    font-weight: 700;
+    background: rgba(0,212,180,0.12);
+    color: var(--neon);
+    border: 1px solid rgba(0,212,180,0.3);
+    padding: 2px 7px;
+    border-radius: 5px;
+    letter-spacing: 1px;
+  }
+  .mob-ep-badge { font-size: 0.7rem; color: var(--muted); }
+  .mob-score { font-size: 0.7rem; color: var(--gold); display: flex; align-items: center; gap: 2px; }
+
+  /* ── Mobil arama çubuğu (hero altı) ── */
+  .mob-search-bar {
+    margin: 0.6rem 1rem 0.2rem;
+    background: var(--surface);
+    border: 1px solid var(--border-accent);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px;
+  }
+  .mob-search-bar svg { flex-shrink: 0; color: var(--muted); }
+  .mob-search-bar span { font-size: 0.85rem; color: var(--muted); font-family: 'Rajdhani', sans-serif; }
+
+  /* ── Mobil hero compact tweak ── */
+  @media (max-width: 768px) {
+    .mob-scroll-section { display: block; }
+    .mob-pill-bar { display: flex; }
+    .mob-search-bar { display: flex; }
+  }
+}
+
+/* Desktop'ta gizle */
+@media (min-width: 769px) {
+  .mob-scroll-section,
+  .mob-pill-bar,
+  .mob-search-bar { display: none !important; }
 }
 </style>
 </head>
@@ -3864,9 +4016,6 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
   <ul class="nav-links" role="list">
     <li><a href="/" style="color:var(--neon)!important;">Ana Sayfa</a></li>
     <li><a href="/anime">Anime</a></li>
-    <li><a href="/sezon">Sezon</a></li>
-    <li><a href="/takvim">Takvim</a></li>
-    <li><a href="/top100">Top 100</a></li>
   </ul>
 
   <div class="nav-right">
@@ -3906,29 +4055,38 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
 
 <!-- MOBILE NAV DRAWER -->
 <div class="mobile-nav" id="mobileNav" role="navigation" aria-label="Mobil navigasyon">
+  <!-- Drawer header -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:1.1rem 1.5rem 0.5rem;border-bottom:1px solid rgba(255,255,255,0.06);">
+    <img src="https://cdn.aniland.net/logo.png" alt="AniLand" style="height:44px;width:auto;object-fit:contain;">
+    <button id="mobileNavClose" aria-label="Menüyü kapat" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <!-- Arama -->
+  <div class="mobile-search" role="search" style="margin:1rem 1.5rem 0.25rem;">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" placeholder="Anime ara..." aria-label="Anime ara">
+  </div>
   <!-- Kullanıcı bilgi çubuğu (giriş yapılınca görünür) -->
-  <div class="mobile-nav-user" id="mobileNavUser" style="display:none;">
+  <div class="mobile-nav-user" id="mobileNavUser" style="display:none;padding:0.75rem 1.5rem;border-bottom:1px solid rgba(255,255,255,0.06);">
     <div class="mobile-nav-user-avatar" id="mobileNavUserAvatar">?</div>
     <div class="mobile-nav-user-info">
       <div class="mobile-nav-user-name" id="mobileNavUserName"></div>
       <div class="mobile-nav-user-actions">
-        <span onclick="hamburgerBtn.click();openProfile();" style="cursor:pointer;color:var(--neon);font-size:0.78rem;font-weight:700;">Profili Gör</span>
-        <span style="color:var(--muted);margin:0 0.4rem;">·</span>
-        <span onclick="hamburgerBtn.click();logout();" style="cursor:pointer;color:var(--red);font-size:0.78rem;font-weight:700;">Çıkış</span>
+        <span onclick="document.getElementById('mobileNavClose').click();openProfile();" style="cursor:pointer;color:var(--neon);font-size:0.82rem;font-weight:700;">Profili Gör</span>
+        <span style="color:var(--muted);margin:0 0.5rem;">·</span>
+        <span onclick="document.getElementById('mobileNavClose').click();logout();" style="cursor:pointer;color:var(--red);font-size:0.82rem;font-weight:700;">Çıkış</span>
       </div>
     </div>
   </div>
+  <!-- Linkler -->
   <ul class="mobile-nav-links" role="list">
-    <li><a href="/" style="color:var(--neon)!important;">Ana Sayfa</a></li>
-    <li><a href="/anime">Anime</a></li>
-    <li><a href="/sezon">Sezon</a></li>
-    <li><a href="/takvim">Takvim</a></li>
-    <li><a href="/top100">Top 100</a></li>
+    <li><a href="/" onclick="document.getElementById('mobileNavClose').click()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="margin-right:0.8rem;flex-shrink:0;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Ana Sayfa</a></li>
+    <li><a href="/anime" onclick="document.getElementById('mobileNavClose').click()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="margin-right:0.8rem;flex-shrink:0;"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg>Anime</a></li>
+
   </ul>
-  <div class="mobile-search" role="search">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    <input type="text" placeholder="Anime ara..." aria-label="Anime ara">
-  </div>
 </div>
 
 <!-- HERO -->
@@ -3992,6 +4150,49 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
 </section>
 
 
+<!-- ===== MOBİL ANİMECİX UI ===== -->
+<!-- Arama çubuğu (mobil) -->
+<div class="mob-search-bar" onclick="openSearch()" style="cursor:pointer;">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+  <span>Anime ara...</span>
+</div>
+
+<!-- Genre pill bar (mobil) -->
+<div class="mob-pill-bar" id="mobPillBar">
+  <div class="mob-pill active" onclick="mobFilterPill(this,'')">Tümü</div>
+  <div class="mob-pill" onclick="mobFilterPill(this,'Aksiyon')">Aksiyon</div>
+  <div class="mob-pill" onclick="mobFilterPill(this,'Macera')">Macera</div>
+  <div class="mob-pill" onclick="mobFilterPill(this,'Komedi')">Komedi</div>
+  <div class="mob-pill" onclick="mobFilterPill(this,'Dram')">Dram</div>
+  <div class="mob-pill" onclick="mobFilterPill(this,'Fantezi')">Fantezi</div>
+  <div class="mob-pill" onclick="mobFilterPill(this,'Romantik')">Romantik</div>
+  <div class="mob-pill" onclick="mobFilterPill(this,'Korku')">Korku</div>
+  <div class="mob-pill" onclick="mobFilterPill(this,'Spor')">Spor</div>
+</div>
+
+<!-- Bu Sezon yatay kaydırma (mobil) -->
+<div class="mob-scroll-section" id="mobThisSeasonSection">
+  <div class="mob-scroll-header">
+    <span class="mob-scroll-title">Bu Sezon</span>
+    <a href="/anime" class="mob-scroll-all">Tümü ›</a>
+  </div>
+  <div class="mob-scroll-row" id="mobThisSeasonRow">
+    <!-- JS ile doldurulur -->
+  </div>
+</div>
+
+<!-- Yeni Bölümler listesi (mobil) -->
+<div class="mob-scroll-section" id="mobNewEpsSection">
+  <div class="mob-scroll-header">
+    <span class="mob-scroll-title">Yeni Bölümler</span>
+    <a href="/anime" class="mob-scroll-all">Tümü ›</a>
+  </div>
+  <div id="mobNewEpsList">
+    <!-- JS ile doldurulur -->
+  </div>
+</div>
+<!-- ===== MOBİL UI BİTİŞ ===== -->
+
 <!-- FEATURED -->
 <section>
   <div class="featured-row fade-in" id="featuredRow">
@@ -4046,7 +4247,7 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
 <section style="background: rgba(18,18,31,0.4); border-top: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05);">
   <div class="section-header fade-in">
     <h2 class="section-title">Yayın Takvimi</h2>
-    <a href="/takvim" class="see-all">Tümü →</a>
+    <a href="/anime" class="see-all">Tümü →</a>
   </div>
   <div class="schedule-grid fade-in" id="homeScheduleGrid"></div>
 </section>
@@ -4121,9 +4322,9 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
     Ara
   </button>
-  <button class="mbn-btn" id="mbnTop" onclick="window.location.href='/top100'">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg>
-    Top 100
+  <button class="mbn-btn" id="mbnAnime" onclick="history.pushState({}, '', '/anime'); closeAllOverlays();">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg>
+    Anime
   </button>
   <button class="mbn-btn" id="mbnProfile" onclick="openProfile()">
     <span class="mbn-avatar-dot" id="mbnAvatarDot"></span>
@@ -4715,13 +4916,29 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
 
           // ── Fullscreen ────────────────────────────────────────────────
           document.getElementById('cpFullscreen').addEventListener('click', () => {
-            if (document.fullscreenElement) document.exitFullscreen();
-            else videoWrap.requestFullscreen && videoWrap.requestFullscreen();
+            const vid = videoElement;
+            // iOS Safari: video elementi üzerinde webkitEnterFullscreen kullan
+            if (vid && vid.webkitEnterFullscreen && !document.fullscreenElement && !document.webkitFullscreenElement) {
+              vid.webkitEnterFullscreen();
+            } else if (document.fullscreenElement || document.webkitFullscreenElement) {
+              (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+            } else if (videoWrap.requestFullscreen) {
+              videoWrap.requestFullscreen();
+            } else if (videoWrap.webkitRequestFullscreen) {
+              videoWrap.webkitRequestFullscreen();
+            }
           });
-          document.addEventListener('fullscreenchange', () => {
+          const _fsChangeHandler = () => {
             const btn = document.getElementById('cpFullscreen');
-            if (btn) btn.innerHTML = document.fullscreenElement ? _svgFsExit : _svgFsEnter;
-          });
+            const inFs = !!(document.fullscreenElement || document.webkitFullscreenElement || (videoElement && videoElement.webkitDisplayingFullscreen));
+            if (btn) btn.innerHTML = inFs ? _svgFsExit : _svgFsEnter;
+          };
+          document.addEventListener('fullscreenchange', _fsChangeHandler);
+          document.addEventListener('webkitfullscreenchange', _fsChangeHandler);
+          if (videoElement) {
+            videoElement.addEventListener('webkitbeginfullscreen', _fsChangeHandler);
+            videoElement.addEventListener('webkitendfullscreen', _fsChangeHandler);
+          }
 
           // ── Keyboard shortcuts ────────────────────────────────────────
           document.addEventListener('keydown', e => {
@@ -5257,7 +5474,11 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
 
   document.getElementById('iframeFullscreen').addEventListener('click', () => {
     const iframe = document.getElementById('driveIframe');
-    if (iframe.requestFullscreen) iframe.requestFullscreen();
+    const wrap   = document.getElementById('videoWrap');
+    // iOS Safari iframe'i tam ekrana alamaz — wrap'i tam ekran yap
+    if (wrap.requestFullscreen) wrap.requestFullscreen();
+    else if (wrap.webkitRequestFullscreen) wrap.webkitRequestFullscreen();
+    else if (iframe.requestFullscreen) iframe.requestFullscreen();
     else if (iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
   });
 
@@ -5752,26 +5973,12 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
     if (detail && detail.classList.contains('open')) return detail.querySelector('.detail-scroll-body');
     const admin = document.getElementById('adminPage');
     if (admin && admin.classList.contains('open')) return admin.querySelector('.admin-scroll-body');
+    const profile = document.getElementById('profilePage');
+    if (profile && profile.classList.contains('open')) return profile;
+    const pubProfile = document.getElementById('pubProfilePage');
+    if (pubProfile && pubProfile.classList.contains('open')) return pubProfile;
     return null;
   }
-  function _scrollForegroundSmoothFast(el, deltaY) {
-    if (!el) return;
-    const max = Math.max(0, el.scrollHeight - el.clientHeight);
-    const next = Math.max(0, Math.min(el.scrollTop + (deltaY * 5), max));
-    el.scrollTop = next;
-  }
-  window.addEventListener('wheel', function(e) {
-    const el = _getForegroundScrollEl();
-    if (!el) return;
-    e.preventDefault();
-    _scrollForegroundSmoothFast(el, e.deltaY);
-  }, { passive: false });
-  window.addEventListener('touchmove', function(e) {
-    const el = _getForegroundScrollEl();
-    if (!el) return;
-    // touch scroll doğal akışta kalsın ama body'ye gitmesin
-    e.stopPropagation();
-  }, { passive: false });
 
   // ===== THEME TOGGLE =====
   const themeToggle = document.getElementById('themeToggle');
@@ -5949,10 +6156,10 @@ body.light ::-webkit-scrollbar-thumb:hover { background: rgba(232,49,110,0.4); }
   function showAdminNavLink() {
     if (document.getElementById('adminNavLink')) return;
     const li = document.createElement('li');
-    li.innerHTML = '<a href="https://aniland.net/admin" id="adminNavLink" style="color:var(--gold);">⚙ Admin</a>';
+    li.innerHTML = '<a href="#" id="adminNavLink" onclick="event.preventDefault();openAdminPanel();" style="color:var(--gold);">⚙ Admin</a>';
     document.querySelector('.nav-links').appendChild(li);
     const mli = document.createElement('li');
-    mli.innerHTML = '<a href="https://aniland.net/admin" style="color:var(--gold);">⚙ Admin Paneli</a>';
+    mli.innerHTML = '<a href="#" onclick="event.preventDefault();openAdminPanel();" style="color:var(--gold);">⚙ Admin Paneli</a>';
     document.querySelector('.mobile-nav-links').appendChild(mli);
   }
 
@@ -6851,8 +7058,9 @@ function showMoreTrend() {
   .pub-profile-page {
     display: none; position: fixed; inset: 0;
     background: var(--void); z-index: 270;
-    overflow-y: scroll;
+    overflow-y: auto;
     overscroll-behavior: contain;
+    touch-action: pan-y;
     -webkit-overflow-scrolling: touch; animation: fadeSlideIn 0.3s ease;
   }
   .pub-profile-page.open { display: block; }
@@ -7125,6 +7333,17 @@ userSearchInput.addEventListener('input', function() {
 
 // ===== HERKESE AÇIK PROFİL SAYFASI =====
 const pubProfilePage = document.getElementById('pubProfilePage');
+
+// Windows touchpad dahil farkli wheel davranislarinda public profile scroll'unun
+// arkaya kacmasini veya tamamen kilitlenmesini engelleyen fallback.
+if (pubProfilePage && !pubProfilePage._wheelBound) {
+  pubProfilePage._wheelBound = true;
+  pubProfilePage.addEventListener('wheel', function(e) {
+    if (!pubProfilePage.classList.contains('open')) return;
+    e.preventDefault();
+    pubProfilePage.scrollTop += e.deltaY;
+  }, { passive: false });
+}
 
 function openPublicProfile(username) {
   // Kendi profilimse kendi profil sayfamıza yönlendir
@@ -8196,11 +8415,13 @@ function openProfile() {
   });
 
   document.getElementById('profilePage').classList.add('open');
+  lockScroll();
   switchPTab('watchlist');
 }
 
 function closeProfile() {
   document.getElementById('profilePage').classList.remove('open');
+  unlockScroll();
 }
 
 // ===== BIO EDIT =====
@@ -8448,37 +8669,38 @@ function addToWatchlist(anime, epNum) {
 const hamburgerBtn = document.getElementById('hamburgerBtn');
 const mobileNav = document.getElementById('mobileNav');
 
+function closeMobileNav() {
+  hamburgerBtn.classList.remove('open');
+  mobileNav.classList.remove('open');
+  hamburgerBtn.setAttribute('aria-expanded', 'false');
+  document.body.style.overflow = '';
+}
+function openMobileNav() {
+  hamburgerBtn.classList.add('open');
+  mobileNav.classList.add('open');
+  hamburgerBtn.setAttribute('aria-expanded', 'true');
+  document.body.style.overflow = 'hidden';
+}
+
 hamburgerBtn.addEventListener('click', () => {
-  const isOpen = hamburgerBtn.classList.toggle('open');
-  mobileNav.classList.toggle('open', isOpen);
-  hamburgerBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  if (mobileNav.classList.contains('open')) closeMobileNav();
+  else openMobileNav();
 });
 
-// Close mobile nav when a link is clicked
+// Drawer içindeki kapat butonu
+const mobileNavClose = document.getElementById('mobileNavClose');
+if (mobileNavClose) mobileNavClose.addEventListener('click', closeMobileNav);
+
+// Link tıklanınca kapat
 mobileNav.querySelectorAll('a').forEach(link => {
-  link.addEventListener('click', () => {
-    hamburgerBtn.classList.remove('open');
-    mobileNav.classList.remove('open');
-    hamburgerBtn.setAttribute('aria-expanded', 'false');
-  });
-});
-
-// Close mobile nav on outside click
-document.addEventListener('click', (e) => {
-  if (!hamburgerBtn.contains(e.target) && !mobileNav.contains(e.target)) {
-    hamburgerBtn.classList.remove('open');
-    mobileNav.classList.remove('open');
-    hamburgerBtn.setAttribute('aria-expanded', 'false');
-  }
+  link.addEventListener('click', closeMobileNav);
 });
 
 // Mobile nav search input → open search overlay
 const mobileNavSearchInput = mobileNav.querySelector('.mobile-search input');
 if (mobileNavSearchInput) {
   mobileNavSearchInput.addEventListener('focus', () => {
-    hamburgerBtn.classList.remove('open');
-    mobileNav.classList.remove('open');
-    hamburgerBtn.setAttribute('aria-expanded', 'false');
+    closeMobileNav();
     openSearch();
   });
 }
@@ -8637,7 +8859,7 @@ document.getElementById('pwChangeBtn').addEventListener('click', async function(
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
-    scroll-behavior: smooth;
+    scroll-behavior: auto;
   }
   .admin-topbar-title {
     font-family: 'Bebas Neue', cursive;
@@ -9307,7 +9529,7 @@ document.getElementById('pwChangeBtn').addEventListener('click', async function(
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
-    scroll-behavior: smooth;
+    scroll-behavior: auto;
   }
 
   /* ── Topbar ── */
@@ -9608,7 +9830,7 @@ const _FAIL_KEY       = 'al_adm_fail';
 const _LOCKOUT_KEY    = 'al_adm_lock';
 const _MAX_FAILS      = 5;
 const _LOCKOUT_MS     = 15 * 60 * 1000;
-const _CORRECT_HASH   = 'c2b0548e35556dba68274f2cffa85c11f109897a12ef997fac3d5e923f428830';
+const _CORRECT_HASH   = 'bb65644492ddc34dbef8a0ccb3bd20cd15d79f5f3ffbd0345a7276ddc3c5597b';
 
 async function _sha256(msg) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
@@ -9700,12 +9922,7 @@ async function _bootAdminPanel() {
 }
 
 async function openAdminPanel() {
-  const cached = localStorage.getItem(_ADMIN_PIN_KEY);
-  if (cached === _CORRECT_HASH && !_isLockedOut()) {
-    _bootAdminPanel();
-  } else {
-    _showAdminGate('', _bootAdminPanel);
-  }
+  _bootAdminPanel();
 }
 
 document.getElementById('adminBack').addEventListener('click', () => {
@@ -10749,6 +10966,79 @@ function renderHomePage() {
   }
 
   renderPersonalizedSection(animes);
+  renderMobUI(animes);
+}
+
+// ── AnimeciX tarzı Mobil UI Render ───────────────────────────────────────────
+function renderMobUI(animes) {
+  if (window.innerWidth > 768) return;
+  if (!animes || animes.length === 0) return;
+
+  // Bu Sezon: son eklenen 10 anime (yatay scroll kartlar)
+  var seasonRow = document.getElementById('mobThisSeasonRow');
+  if (seasonRow) {
+    var recent = animes.slice().sort(function(a,b){ return (b.addedAt||0)-(a.addedAt||0); }).slice(0,10);
+    seasonRow.innerHTML = recent.map(function(a) {
+      var thumb = a.coverImage
+        ? '<img src="'+escHtml(a.coverImage)+'" style="width:100%;height:100%;object-fit:cover;" alt="'+escHtml(a.title||'')+'">'
+        : '<div style="font-size:1.8rem;display:flex;align-items:center;justify-content:center;height:100%;"></div>';
+      var score = parseFloat(a.displayScore||a.avgRating||a.score)||0;
+      var scoreHtml = score > 0 ? '<div class="mob-score"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>'+score.toFixed(1)+'</div>' : '';
+      return '<div class="anime-card" data-slug="'+escHtml(a.slug)+'" style="flex:0 0 100px;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border);cursor:pointer;background:var(--surface);transition:transform 0.2s;" onclick="navigateToAnime(\''+escHtml(a.slug)+'\')">'
+        +'<div style="width:100%;height:130px;background:linear-gradient(135deg,'+escHtml(a.color1||'#1a0a2e')+','+escHtml(a.color2||'#2e0a1a')+');">'+thumb+'</div>'
+        +'<div style="padding:6px 7px;">'
+        +'<div style="font-size:0.78rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text);">'+escHtml(a.title||'')+'</div>'
+        +scoreHtml
+        +'<div style="font-size:0.68rem;color:var(--muted);margin-top:2px;">'+(a.eps||'?')+' Bölüm</div>'
+        +'</div></div>';
+    }).join('');
+  }
+
+  // Yeni Bölümler: en son eklenen 8 anime liste görünümü
+  var epsList = document.getElementById('mobNewEpsList');
+  if (epsList) {
+    var latest = animes.slice().sort(function(a,b){ return (b.addedAt||0)-(a.addedAt||0); }).slice(0,8);
+    epsList.innerHTML = latest.map(function(a) {
+      var thumb = a.coverImage
+        ? '<img src="'+escHtml(a.coverImage)+'" class="mob-list-thumb" alt="'+escHtml(a.title||'')+'" style="object-fit:cover;">'
+        : '<div class="mob-list-thumb" style="display:flex;align-items:center;justify-content:center;font-size:1.5rem;"></div>';
+      var tags = (a.genre||'').split(',').slice(0,2).map(function(g){ return '<div class="mob-list-tag">'+escHtml(g.trim())+'</div>'; }).join('');
+      var score = parseFloat(a.displayScore||a.avgRating||a.score)||0;
+      var scoreHtml = score > 0 ? '<div class="mob-score"><svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>'+score.toFixed(1)+'</div>' : '';
+      return '<div class="mob-list-item" onclick="navigateToAnime(\''+escHtml(a.slug)+'\')">'
+        +thumb
+        +'<div class="mob-list-body">'
+        +'<div class="mob-list-title">'+escHtml(a.title||'')+'</div>'
+        +'<div class="mob-list-sub">'+(a.year||'')+(a.year&&a.eps?' · ':'')+(a.eps||'?')+' Bölüm</div>'
+        +'<div class="mob-list-tags">'+tags+'</div>'
+        +'</div>'
+        +'<div class="mob-list-right">'
+        +'<div class="mob-new-badge">YENİ</div>'
+        +scoreHtml
+        +'</div>'
+        +'</div>';
+    }).join('');
+  }
+}
+
+function mobFilterPill(el, genre) {
+  document.querySelectorAll('.mob-pill').forEach(function(p){ p.classList.remove('active'); });
+  el.classList.add('active');
+  var animes = getAnimes();
+  var filtered = genre ? animes.filter(function(a){ return (a.genre||'').toLowerCase().indexOf(genre.toLowerCase()) > -1; }) : animes;
+  renderMobUIFiltered(filtered);
+}
+
+function renderMobUIFiltered(animes) {
+  var seasonRow = document.getElementById('mobThisSeasonRow');
+  if (seasonRow) {
+    seasonRow.innerHTML = '';
+    var w = window.innerWidth;
+    if (w > 768) return;
+    renderMobUI(animes);
+    return;
+  }
+  renderMobUI(animes);
 }
 
 function renderPersonalizedSection(animes) {
@@ -10952,6 +11242,8 @@ function closeAllOverlays() {
   document.title = 'AniLand';
   document.getElementById('animeDetailPage').classList.remove('open');
   document.getElementById('adminPage').classList.remove('open');
+  document.getElementById('profilePage').classList.remove('open');
+  document.getElementById('pubProfilePage').classList.remove('open');
   const _pp = document.getElementById('playerPage');
   if (_pp && _pp.classList.contains('open')) {
     if (typeof wtLeaveRoom === 'function' && typeof WT !== 'undefined' && WT.isInRoom) wtLeaveRoom();
@@ -10972,7 +11264,7 @@ async function handleHash() {
   if (_animesCache === null) await fetchAnimes();
 
   if (wantsAdmin) {
-    window.location.replace('https://aniland.net/admin');
+    openAdminPanel();
     return;
   }
 
@@ -11033,6 +11325,7 @@ window.addEventListener('popstate', async () => {
 
   // Admin paneli
   if (path === '/admin') {
+    history.replaceState({}, '', '/');
     openAdminPanel();
     return;
   }
@@ -11249,6 +11542,7 @@ async function loadSettings() {
   await loadSettings();
   // Direkt /admin URL'ine girilmişse admin panelini aç
   if (window.location.pathname === '/admin') {
+    history.replaceState({}, '', '/');
     await openAdminPanel();
     return;
   }
