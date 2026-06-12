@@ -1,3 +1,7 @@
+// ─── Render.com bellek optimizasyonu ──────────────────────────────────────────
+// package.json "start" script: "node --max-old-space-size=384 --expose-gc server.js"
+// Bu sayede Node.js heap 384MB ile sınırlanır ve GC daha agresif çalışır.
+// ─────────────────────────────────────────────────────────────────────────────────
 const http     = require('http');
 const https    = require('https');
 const fs       = require('fs');
@@ -126,7 +130,7 @@ const TOP100_FILE   = path.join(__dirname, 'top100.html');
 
 // CORS: production'da ALLOWED_ORIGIN env var ile kısıtla
 // örn: ALLOWED_ORIGIN=https://aniland.com node server.js
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || '*';
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://aniland.net';
 
 // ─── HTML önbelleği (bir kez oku, bellekte tut) ──────────────────────────────
 const _htmlCaches = {};
@@ -205,17 +209,31 @@ async function withUsers(fn) {
 }
 
 // ─── Anime verisi (local JSON + FTP sync) ────────────────────────────────────
+let _animesCache = null;
+let _animesCacheMtime = 0;
+
 async function readAnimes() {
   try {
+    const mtime = fs.existsSync(ANIMES_FILE) ? fs.statSync(ANIMES_FILE).mtimeMs : 0;
+    if (_animesCache && mtime === _animesCacheMtime) return _animesCache;
     const raw = fs.readFileSync(ANIMES_FILE, 'utf8');
-    return JSON.parse(raw);
+    _animesCache = JSON.parse(raw);
+    _animesCacheMtime = mtime;
+    return _animesCache;
   } catch {
     return [];
   }
 }
 
+function invalidateAnimesCache() {
+  _animesCache = null;
+  _animesCacheMtime = 0;
+}
+
 async function writeAnimes(list) {
-  fs.writeFileSync(ANIMES_FILE, JSON.stringify(list, null, 2), 'utf8');
+  fs.writeFileSync(ANIMES_FILE, JSON.stringify(list), 'utf8');
+  _animesCache = list;
+  _animesCacheMtime = fs.statSync(ANIMES_FILE).mtimeMs;
   ftpSyncAnimes();
 }
 
@@ -481,7 +499,7 @@ function readBody(req) {
     let data = '';
     req.on('data', chunk => {
       data += chunk;
-      if (data.length > 50e6) reject(new Error('Too large'));
+      if (data.length > 5e6) reject(new Error('Too large'));
     });
     req.on('end', () => {
       if (!data.trim()) { resolve({}); return; }
@@ -492,19 +510,29 @@ function readBody(req) {
   });
 }
 
-function corsHeaders() {
+const ALLOWED_ORIGINS = new Set([
+  'https://aniland.net',
+  'https://www.aniland.net',
+  ...(process.env.EXTRA_ORIGINS ? process.env.EXTRA_ORIGINS.split(',') : []),
+]);
+
+function corsHeaders(req) {
+  const origin = (req && req.headers && req.headers['origin']) || '';
+  const allowedOrigin = ALLOWED_ORIGINS.has(origin) ? origin : (ALLOWED_ORIGIN === '*' ? '*' : ALLOWED_ORIGIN);
   return {
-    'Access-Control-Allow-Origin':  ALLOWED_ORIGIN,
+    'Access-Control-Allow-Origin':  allowedOrigin,
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Methods': 'GET,POST,DELETE,PATCH,OPTIONS',
+    'Access-Control-Allow-Credentials': 'true',
+    'Vary': 'Origin',
   };
 }
 
-function json(res, status, obj) {
+function json(res, status, obj, req) {
   const body = JSON.stringify(obj);
   res.writeHead(status, {
     'Content-Type': 'application/json',
-    ...corsHeaders(),
+    ...corsHeaders(req),
     'Content-Length': Buffer.byteLength(body)
   });
   res.end(body);
@@ -1702,9 +1730,13 @@ const routes = {
         users[idx].bio = bio.slice(0, 300); // max 300 karakter
       }
       if (typeof photoDataUrl === 'string') {
-        // Sadece base64 data URL kabul et (güvenlik)
-        if (photoDataUrl === '' || photoDataUrl.startsWith('data:image/')) {
+        // Sadece base64 data URL kabul et (güvenlik), max ~150KB resim (~200KB base64)
+        if (photoDataUrl === '') {
+          users[idx].photoDataUrl = '';
+        } else if (photoDataUrl.startsWith('data:image/') && photoDataUrl.length <= 4_000_000) {
           users[idx].photoDataUrl = photoDataUrl;
+        } else if (photoDataUrl.startsWith('data:image/') && photoDataUrl.length > 4_000_000) {
+          return json(res, 413, { error: 'Profil fotoğrafı çok büyük. Maksimum 3MB.' });
         }
       }
       await writeUsers(users);
@@ -1903,7 +1935,7 @@ const server = http.createServer(async (req, res) => {
   });
 
   if (req.method === 'OPTIONS') {
-    res.writeHead(204, corsHeaders());
+    res.writeHead(204, corsHeaders(req));
     return res.end();
   }
 
@@ -2344,18 +2376,28 @@ const CDN_FILE_MAP = {
 async function syncFileFromCDN(key) {
   const entry = CDN_FILE_MAP[key];
   if (!entry) throw new Error('Bilinmeyen dosya key: ' + key);
-  console.log(`[AniLand] ${key} CDN'den çekiliyor... (${entry.cdnUrl})`);
-  const res = await new Promise((resolve, reject) => {
-    https.get(entry.cdnUrl, r => resolve(r)).on('error', reject);
+  console.log(`[AniLand] ${key} CDN'den cekiliyor... (${entry.cdnUrl})`);
+  await new Promise((resolve, reject) => {
+    https.get(entry.cdnUrl, (res) => {
+      if (res.statusCode !== 200) {
+        res.resume();
+        return reject(new Error(`CDN HTTP ${res.statusCode} — ${key}`));
+      }
+      const tmpFile = entry.localFile + '.tmp';
+      const dest = fs.createWriteStream(tmpFile);
+      res.pipe(dest);
+      dest.on('finish', () => {
+        try {
+          fs.renameSync(tmpFile, entry.localFile);
+          console.log(`[AniLand] ✅ ${key} CDN'den alindi.`);
+          resolve();
+        } catch (e) {
+          reject(e);
+        }
+      });
+      dest.on('error', reject);
+    }).on('error', reject);
   });
-  if (res.statusCode !== 200) {
-    res.resume();
-    throw new Error(`CDN HTTP ${res.statusCode} — ${key}`);
-  }
-  const chunks = [];
-  for await (const chunk of res) chunks.push(chunk);
-  fs.writeFileSync(entry.localFile, Buffer.concat(chunks), 'utf8');
-  console.log(`[AniLand] ✅ ${key} CDN'den alındı.`);
 }
 
 // Geriye dönük uyumluluk
@@ -2383,6 +2425,15 @@ function startKeepAlive() {
 }
 
 async function startServer() {
+  // Bellek kullanimi izleme — her 5 dakikada bir log at
+  setInterval(() => {
+    const mem = process.memoryUsage();
+    const mb = (b) => Math.round(b / 1024 / 1024);
+    console.log(`[Bellek] RSS: ${mb(mem.rss)}MB | Heap: ${mb(mem.heapUsed)}/${mb(mem.heapTotal)}MB | External: ${mb(mem.external)}MB`);
+    // Zorla GC (--expose-gc ile calıstırılırsa)
+    if (global.gc) global.gc();
+  }, 5 * 60 * 1000);
+
   await connectDB();
   await ensureAdminExists();
   await syncAnimesFromCDN();
