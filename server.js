@@ -209,31 +209,26 @@ async function withUsers(fn) {
 }
 
 // ─── Anime verisi (local JSON + FTP sync) ────────────────────────────────────
-let _animesCache = null;
-let _animesCacheMtime = 0;
+// BELLEK NOTU: Eski sürüm tüm animes.json'ı (base64 görsellerle) kalıcı olarak
+// heap'te tutuyordu. 512MB konteynerde bu tek başına OOM sebebiydi. Artık kalıcı
+// cache YOK — okuma yolu (GET /api/animes) doğrudan diskten stream edilir,
+// mutasyon yolları ise mutex altında geçici olarak parse eder ve iş bitince
+// kopya GC tarafından serbest bırakılır.
 
 async function readAnimes() {
   try {
-    const mtime = fs.existsSync(ANIMES_FILE) ? fs.statSync(ANIMES_FILE).mtimeMs : 0;
-    if (_animesCache && mtime === _animesCacheMtime) return _animesCache;
+    if (!fs.existsSync(ANIMES_FILE)) return [];
     const raw = fs.readFileSync(ANIMES_FILE, 'utf8');
-    _animesCache = JSON.parse(raw);
-    _animesCacheMtime = mtime;
-    return _animesCache;
+    return JSON.parse(raw);
   } catch {
     return [];
   }
 }
 
-function invalidateAnimesCache() {
-  _animesCache = null;
-  _animesCacheMtime = 0;
-}
+function invalidateAnimesCache() { /* no-op: kalıcı cache kaldırıldı */ }
 
 async function writeAnimes(list) {
   fs.writeFileSync(ANIMES_FILE, JSON.stringify(list), 'utf8');
-  _animesCache = list;
-  _animesCacheMtime = fs.statSync(ANIMES_FILE).mtimeMs;
   ftpSyncAnimes();
 }
 
@@ -931,7 +926,21 @@ const routes = {
   // ── Anime API ────────────────────────────────────────────────────────────
 
   'GET /api/animes': async (req, res) => {
-    return json(res, 200, { animes: await readAnimes() });
+    // BELLEK NOTU: Kataloğu parse edip yeniden stringify ETMEDEN doğrudan
+    // diskten stream ediyoruz. Böylece her istek devasa veriyi belleğe
+    // kopyalamıyor — sadece sabit boyutlu buffer'larla akıtıyor.
+    try {
+      if (!fs.existsSync(ANIMES_FILE)) return json(res, 200, { animes: [] }, req);
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', ...corsHeaders(req) });
+      res.write('{"animes":');
+      const stream = fs.createReadStream(ANIMES_FILE, { highWaterMark: 64 * 1024 });
+      stream.on('error', () => { try { res.end('[]}'); } catch {} });
+      stream.on('end', () => { try { res.end('}'); } catch {} });
+      req.on('close', () => stream.destroy());
+      stream.pipe(res, { end: false });
+    } catch {
+      return json(res, 200, { animes: [] }, req);
+    }
   },
 
   // ── Site Ayarları ────────────────────────────────────────────────────────
@@ -990,7 +999,20 @@ const routes = {
         composite = (ownScore / 10 * 7) + (normalizedComments * 3);
       }
 
-      return Object.assign({}, a, {
+      // BELLEK NOTU: Tüm animeyi Object.assign ile klonlamak yerine sadece
+      // ranking listesinin ihtiyaç duyduğu hafif alanları projekte ediyoruz.
+      // epLinks / epTitles / epSubs / epMeta (her bölümün link haritaları) ve
+      // bannerImage gibi ağır alanlar bir sıralama listesine dahil edilmez.
+      return {
+        id:    a.id,
+        title: a.title,
+        slug:  a.slug,
+        emoji: a.emoji,
+        genre: a.genre,
+        year:  a.year,
+        eps:   a.eps,
+        score: a.score,
+        coverImage: a.coverImage || '',
         avgRating: Math.round(avgRating * 100) / 100,
         ratingCount,
         commentCount,
@@ -999,7 +1021,7 @@ const routes = {
         displayScore: ratingCount > 0
           ? Math.round(avgRating * 2 * 100) / 100  // 1-5 → 1-10
           : ownScore,
-      });
+      };
     }).sort((a, b) => b.composite - a.composite);
 
     return json(res, 200, { animes: ranked });
@@ -2425,14 +2447,14 @@ function startKeepAlive() {
 }
 
 async function startServer() {
-  // Bellek kullanimi izleme — her 5 dakikada bir log at
+  // Bellek kullanimi izleme + GC — her 60 saniyede bir
   setInterval(() => {
     const mem = process.memoryUsage();
     const mb = (b) => Math.round(b / 1024 / 1024);
     console.log(`[Bellek] RSS: ${mb(mem.rss)}MB | Heap: ${mb(mem.heapUsed)}/${mb(mem.heapTotal)}MB | External: ${mb(mem.external)}MB`);
     // Zorla GC (--expose-gc ile calıstırılırsa)
     if (global.gc) global.gc();
-  }, 5 * 60 * 1000);
+  }, 60 * 1000);
 
   await connectDB();
   await ensureAdminExists();
