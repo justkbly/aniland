@@ -15,6 +15,53 @@ const FTP_USER   = process.env.FTP_USER || 'wtq97o2y5psu';
 const FTP_PASS   = process.env.FTP_PASS || 'KUBIcPanelSifre1!';
 const FTP_REMOTE = process.env.FTP_REMOTE || '/public_html/animes.json';
 
+// ─── Cloudflare Cache Purge ────────────────────────────────────────────────
+// CF_API_TOKEN: Cloudflare panelinden "Zone.Cache Purge" yetkili API token
+// CF_ZONE_ID:   Cloudflare panelinde domainin sağ altında görünen Zone ID
+const CF_API_TOKEN = process.env.CF_API_TOKEN || '';
+const CF_ZONE_ID   = process.env.CF_ZONE_ID   || '';
+const CF_PURGE_URLS = [
+  'https://aniland.net/',
+  'https://aniland.net/anime',
+  'https://aniland.net/sezon',
+  'https://aniland.net/takvim',
+  'https://aniland.net/top100',
+];
+
+function purgeCloudflareCache() {
+  return new Promise((resolve, reject) => {
+    if (!CF_API_TOKEN || !CF_ZONE_ID) {
+      return reject(new Error('CF_API_TOKEN veya CF_ZONE_ID tanımlı değil (env variable eksik).'));
+    }
+    const body = JSON.stringify({ files: CF_PURGE_URLS });
+    const reqCf = https.request({
+      hostname: 'api.cloudflare.com',
+      path: `/client/v4/zones/${CF_ZONE_ID}/purge_cache`,
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${CF_API_TOKEN}`,
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(body),
+      },
+    }, (res) => {
+      let data = '';
+      res.on('data', (chunk) => { data += chunk; });
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          if (parsed.success) resolve(parsed);
+          else reject(new Error('Cloudflare API hatası: ' + JSON.stringify(parsed.errors)));
+        } catch (e) {
+          reject(new Error('Cloudflare yanıtı çözümlenemedi: ' + e.message));
+        }
+      });
+    });
+    reqCf.on('error', reject);
+    reqCf.write(body);
+    reqCf.end();
+  });
+}
+
 async function ftpSyncAnimes() {
   const client = new ftp.Client(30000);
   try {
@@ -1279,6 +1326,21 @@ const routes = {
     return json(res, 200, { ok: true, results });
   },
 
+  // POST /api/admin/purge-cache — Cloudflare edge cache'ini temizler (admin only)
+  'POST /api/admin/purge-cache': async (req, res) => {
+    const session = getSession(getToken(req));
+    if (!session || session.role !== 'admin')
+      return json(res, 403, { error: 'Yetki yok.' });
+
+    try {
+      await purgeCloudflareCache();
+      return json(res, 200, { ok: true });
+    } catch (e) {
+      console.error('[purge-cache] Hata:', e.message);
+      return json(res, 500, { ok: false, error: e.message });
+    }
+  },
+
   'GET /api/analytics': async (req, res) => {
     const session = getSession(getToken(req));
     if (!session || session.role !== 'admin')
@@ -2146,6 +2208,9 @@ const server = http.createServer(async (req, res) => {
 
   if (url === '/api/admin/sync-cdn' && req.method === 'POST')
     return routes['POST /api/admin/sync-cdn'](req, res, {});
+
+  if (url === '/api/admin/purge-cache' && req.method === 'POST')
+    return routes['POST /api/admin/purge-cache'](req, res, {});
 
   if (url === '/api/analytics' && req.method === 'GET')
     return routes['GET /api/analytics'](req, res, {});
