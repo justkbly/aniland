@@ -642,6 +642,14 @@ function handleWsMessage(ws, session, rawData) {
         message: 'Oda bulunamadı. Kod yanlış veya oda kapanmış olabilir.'
       }));
     }
+    // Katılan kullanıcı farklı bir anime izliyorsa odaya katılmasına izin verme
+    const { animeSlug: joinerSlug } = msg;
+    if (joinerSlug && joinerSlug !== room.animeSlug) {
+      return ws.send(JSON.stringify({
+        type: 'error',
+        message: `Bu oda "${room.animeTitle}" için açılmış. Katılmak için önce o animeyi açmalısın.`
+      }));
+    }
     // Aynı kullanıcı zaten bu odadaysa tekrar katılmasın
     if (ws.roomCode === roomCode.toUpperCase() && room.members.has(username)) {
       return ws.send(JSON.stringify({ type: 'room:joined', state: getRoomSafeState(room) }));
