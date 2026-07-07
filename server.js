@@ -513,6 +513,21 @@ function getActivePresence() {
   return out.sort((a, b) => a.secondsAgo - b.secondsAgo);
 }
 
+// Belirli bir kullanıcının çevrimiçi/son görülme durumu (profil sayfası için).
+// Aynı kullanıcı birden fazla cihazdan bağlıysa en son görülen ping esas alınır.
+function getUserPresenceStatus(username) {
+  if (!username) return { online: false, lastSeenAt: null };
+  const now = Date.now();
+  let mostRecent = null;
+  for (const info of presenceMap.values()) {
+    if (info.username && info.username.toLowerCase() === username.toLowerCase()) {
+      if (mostRecent === null || info.lastSeen > mostRecent) mostRecent = info.lastSeen;
+    }
+  }
+  if (mostRecent === null) return { online: false, lastSeenAt: null };
+  return { online: (now - mostRecent) < PRESENCE_TTL, lastSeenAt: mostRecent };
+}
+
 // ─── Oturum yönetimi (in-memory + Mongo'da kalıcı yedek) ──────────────────────
 // sessions Map senkron ve tüm route'larda await'siz kullanılıyor — bu API'yi
 // bozmamak için Map olduğu gibi kalıyor. Sunucu her yeniden başladığında (kod
@@ -534,7 +549,16 @@ const SessionModel = mongoose.model('Session', SessionSchema);
 
 const sessions = new Map();
 
-function createToken(userRecord) {
+// Son 20 giriş (in-memory, admin panelinde "Aktif Kullanıcılar" ile birlikte
+// gösterilir — o an aktif olmasalar bile son girişleri görmek için)
+const recentLogins = [];
+const RECENT_LOGINS_MAX = 20;
+function recordLogin(entry) {
+  recentLogins.unshift(entry);
+  if (recentLogins.length > RECENT_LOGINS_MAX) recentLogins.length = RECENT_LOGINS_MAX;
+}
+
+function createToken(userRecord, req) {
   const token = crypto.randomBytes(32).toString('hex');
   const data = {
     username: userRecord.username,
@@ -546,6 +570,11 @@ function createToken(userRecord) {
   sessions.set(token, data);
   SessionModel.create({ token, ...data })
     .catch(e => console.warn('[Session] Mongo\'ya yazılamadı:', e.message));
+  if (req) {
+    const ip = getClientIp(req);
+    const { os, browser, device } = parseUserAgent(req.headers['user-agent'] || '');
+    recordLogin({ username: data.username, role: data.role, ip, os, browser, device, loginAt: data.loginAt });
+  }
   return token;
 }
 
@@ -902,7 +931,7 @@ const routes = {
       const newUser = { username, email, hash, salt, role: 'user', joined: Date.now() };
       users.push(newUser);
       await writeUsers(users);
-      const token = createToken(newUser);
+      const token = createToken(newUser, req);
       return json(res, 200, { token, user: { username, email, role: 'user', joined: newUser.joined } });
     });
   },
@@ -945,7 +974,7 @@ const routes = {
 
     console.log(`[login] başarılı — kullanıcı: "${user.username}" rol: ${user.role} (ip: ${ip})`);
     clearLoginAttempts(ip);
-    const token = createToken(user);
+    const token = createToken(user, req);
     return json(res, 200, {
       token,
       user: { username: user.username, email: user.email, role: user.role, joined: user.joined }
@@ -1869,6 +1898,15 @@ const routes = {
     }
     followingCount = follows[user.username] ? follows[user.username].length : 0;
 
+    const presence = getUserPresenceStatus(user.username);
+
+    // Bu profili görüntüleyen kişi (giriş yapmışsa) zaten takip ediyor mu?
+    // Eskiden bu bilgi hiç dönülmüyordu, bu yüzden takip butonu her zaman
+    // "+ Takip Et" olarak başlıyordu, zaten takip edilse bile.
+    const viewerSession = getSession(getToken(req));
+    const isFollowing = !!(viewerSession && viewerSession.username !== user.username
+      && (follows[viewerSession.username] || []).includes(user.username));
+
     return json(res, 200, {
       profile: {
         username:    user.username,
@@ -1880,6 +1918,9 @@ const routes = {
         following:   followingCount,
         bio:         user.bio         || '',
         photoDataUrl: user.photoDataUrl || '',
+        online:      presence.online,
+        lastSeenAt:  presence.lastSeenAt,
+        isFollowing,
       }
     });
   },
@@ -2410,7 +2451,7 @@ const server = http.createServer(async (req, res) => {
     const session = getSession(getToken(req));
     if (!session || session.role !== 'admin') return json(res, 403, { error: 'Yetki yok.' });
     const active = getActivePresence();
-    return json(res, 200, { count: active.length, users: active });
+    return json(res, 200, { count: active.length, users: active, recentLogins });
   }
 
   // Takipçi sistemi: /api/user/:username/follow[ers]
