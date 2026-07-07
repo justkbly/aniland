@@ -470,20 +470,82 @@ function getViewerCount(slug) {
   return count;
 }
 
-// ─── Oturum yönetimi (in-memory) ──────────────────────────────────────────────
+// ─── Site geneli aktif kullanıcı takibi (in-memory, admin panel için) ─────────
+// key: giriş yapılmışsa token (aynı kullanıcı 2 cihazdan girerse 2 ayrı satır
+// olur — "cihazlarını görmek istiyorum" isteğine uygun), değilse ip+user-agent.
+const presenceMap = new Map();
+const PRESENCE_TTL = 2 * 60 * 1000; // 2 dakika — bu süre ping atılmazsa çevrimdışı sayılır
+
+function parseUserAgent(ua) {
+  ua = ua || '';
+  let os = 'Bilinmeyen';
+  if (/Windows/i.test(ua)) os = 'Windows';
+  else if (/Android/i.test(ua)) os = 'Android';
+  else if (/iPhone|iPad|iPod/i.test(ua)) os = 'iOS';
+  else if (/Mac OS X/i.test(ua)) os = 'macOS';
+  else if (/Linux/i.test(ua)) os = 'Linux';
+
+  let browser = 'Bilinmeyen';
+  if (/Edg\//i.test(ua)) browser = 'Edge';
+  else if (/OPR\/|Opera/i.test(ua)) browser = 'Opera';
+  else if (/Chrome\//i.test(ua) && !/Chromium/i.test(ua)) browser = 'Chrome';
+  else if (/Firefox\//i.test(ua)) browser = 'Firefox';
+  else if (/Safari\//i.test(ua) && !/Chrome\//i.test(ua)) browser = 'Safari';
+
+  let device = 'Masaüstü';
+  if (/iPad|Tablet/i.test(ua)) device = 'Tablet';
+  else if (/Mobi|Android.*Mobile|iPhone/i.test(ua)) device = 'Mobil';
+
+  return { os, browser, device };
+}
+
+function pingPresence(key, info) {
+  presenceMap.set(key, { ...info, lastSeen: Date.now() });
+}
+
+function getActivePresence() {
+  const now = Date.now();
+  const out = [];
+  for (const [key, info] of presenceMap) {
+    if (now - info.lastSeen < PRESENCE_TTL) out.push({ ...info, secondsAgo: Math.round((now - info.lastSeen) / 1000) });
+    else presenceMap.delete(key);
+  }
+  return out.sort((a, b) => a.secondsAgo - b.secondsAgo);
+}
+
+// ─── Oturum yönetimi (in-memory + Mongo'da kalıcı yedek) ──────────────────────
+// sessions Map senkron ve tüm route'larda await'siz kullanılıyor — bu API'yi
+// bozmamak için Map olduğu gibi kalıyor. Sunucu her yeniden başladığında (kod
+// güncellemesi/deploy sonrası) bu Map sıfırlanıp herkesin oturumu düşüyordu.
+// Şimdi her login/logout Mongo'ya da (fire-and-forget) yazılıyor, açılışta ise
+// Mongo'dan geri okunup Map'e dolduruluyor — restart girişleri artık silmiyor.
 const SESSION_TTL = 30 * 24 * 60 * 60 * 1000; // 30 gün
+
+const SessionSchema = new mongoose.Schema({
+  token:     { type: String, required: true, unique: true },
+  username:  String,
+  email:     String,
+  role:      String,
+  joined:    Number,
+  loginAt:   Number, // ms epoch — in-memory session objesiyle birebir aynı format
+  createdAt: { type: Date, default: Date.now, expires: SESSION_TTL / 1000 } // Mongo TTL: süresi geçeni otomatik siler
+}, { versionKey: false });
+const SessionModel = mongoose.model('Session', SessionSchema);
 
 const sessions = new Map();
 
 function createToken(userRecord) {
   const token = crypto.randomBytes(32).toString('hex');
-  sessions.set(token, {
+  const data = {
     username: userRecord.username,
     email:    userRecord.email,
     role:     userRecord.role,
     joined:   userRecord.joined,
     loginAt:  Date.now()
-  });
+  };
+  sessions.set(token, data);
+  SessionModel.create({ token, ...data })
+    .catch(e => console.warn('[Session] Mongo\'ya yazılamadı:', e.message));
   return token;
 }
 
@@ -493,6 +555,7 @@ function getSession(token) {
   if (!session) return null;
   if (Date.now() - session.loginAt > SESSION_TTL) {
     sessions.delete(token);
+    SessionModel.deleteOne({ token }).catch(() => {});
     return null;
   }
   return session;
@@ -500,6 +563,24 @@ function getSession(token) {
 
 function destroySession(token) {
   sessions.delete(token);
+  SessionModel.deleteOne({ token }).catch(() => {});
+}
+
+// Sunucu açılışında Mongo'daki oturumları in-memory Map'e geri yükler
+async function loadSessionsFromDB() {
+  try {
+    const docs = await SessionModel.find({}).lean();
+    const now = Date.now();
+    let restored = 0;
+    for (const d of docs) {
+      if (now - d.loginAt > SESSION_TTL) continue; // süresi dolmuş, Mongo TTL zaten silecek
+      sessions.set(d.token, { username: d.username, email: d.email, role: d.role, joined: d.joined, loginAt: d.loginAt });
+      restored++;
+    }
+    console.log(`[AniLand] 🔐 ${restored} aktif oturum MongoDB'den geri yüklendi.`);
+  } catch (e) {
+    console.warn('[AniLand] ⚠️  Oturumlar geri yüklenemedi:', e.message);
+  }
 }
 
 // ─── Brute-force koruması ─────────────────────────────────────────────────────
@@ -915,7 +996,7 @@ const routes = {
       if (newList.length === before) return json(res, 404, { error: 'Kullanıcı bulunamadı.' });
       await writeUsers(newList);
       for (const [token, data] of sessions) {
-        if (data.username === target) sessions.delete(token);
+        if (data.username === target) destroySession(token);
       }
       return json(res, 200, { ok: true });
     });
@@ -2304,6 +2385,34 @@ const server = http.createServer(async (req, res) => {
     return json(res, 200, { count: getViewerCount(slug) });
   }
 
+  // Site geneli aktif kullanıcı ping'i (her sayfa periyodik çağırır, auth gerekmez)
+  if (url === '/api/presence/ping' && req.method === 'POST') {
+    const body = await readBody(req);
+    let data = {};
+    try { data = JSON.parse(body); } catch {}
+    const token = getToken(req);
+    const session = token ? getSession(token) : null;
+    const ip = getClientIp(req);
+    const ua = req.headers['user-agent'] || '';
+    const { os, browser, device } = parseUserAgent(ua);
+    const key = session ? token : (ip + '|' + ua);
+    pingPresence(key, {
+      username: session ? session.username : null,
+      role: session ? session.role : null,
+      ip, os, browser, device,
+      path: typeof data.path === 'string' ? data.path.slice(0, 200) : ''
+    });
+    return json(res, 200, { ok: true });
+  }
+
+  // Admin: şu an aktif olan kullanıcı/ziyaretçi listesi
+  if (url === '/api/admin/presence' && req.method === 'GET') {
+    const session = getSession(getToken(req));
+    if (!session || session.role !== 'admin') return json(res, 403, { error: 'Yetki yok.' });
+    const active = getActivePresence();
+    return json(res, 200, { count: active.length, users: active });
+  }
+
   // Takipçi sistemi: /api/user/:username/follow[ers]
   if (url.match(/^\/api\/user\/([^/]+)\/follow$/) && req.method === 'POST') {
     const username = url.split('/')[3];
@@ -2530,6 +2639,7 @@ async function startServer() {
   }, 60 * 1000);
 
   await connectDB();
+  await loadSessionsFromDB();
   await ensureAdminExists();
   await syncAnimesFromCDN();
   await syncHtmlFromCDN();
