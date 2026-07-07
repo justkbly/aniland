@@ -255,19 +255,16 @@ async function withUsers(fn) {
   }
 }
 
-// ─── Anime verisi (local JSON + FTP sync) ────────────────────────────────────
-// BELLEK NOTU: Eski sürüm tüm animes.json'ı (base64 görsellerle) kalıcı olarak
-// heap'te tutuyordu. 512MB konteynerde bu tek başına OOM sebebiydi. Artık kalıcı
-// cache YOK — okuma yolu (GET /api/animes) doğrudan diskten stream edilir,
-// mutasyon yolları ise mutex altında geçici olarak parse eder ve iş bitince
-// kopya GC tarafından serbest bırakılır.
+// ─── Anime verisi (MongoDB — users ile aynı mantık) ──────────────────────────
+// Animeler artık AnimeModel üzerinden MongoDB'de tutulur. Yerel animes.json
+// dosyası ve FTP/CDN senkronu sadece CDN fallback'i için ayrıca güncellenir;
+// asıl doğruluk kaynağı (source of truth) MongoDB'dir.
 
 async function readAnimes() {
   try {
-    if (!fs.existsSync(ANIMES_FILE)) return [];
-    const raw = fs.readFileSync(ANIMES_FILE, 'utf8');
-    return JSON.parse(raw);
-  } catch {
+    return await AnimeModel.find({}).lean();
+  } catch (e) {
+    console.error('[AniLand] readAnimes (MongoDB) hatası:', e.message);
     return [];
   }
 }
@@ -275,8 +272,18 @@ async function readAnimes() {
 function invalidateAnimesCache() { /* no-op: kalıcı cache kaldırıldı */ }
 
 async function writeAnimes(list) {
-  fs.writeFileSync(ANIMES_FILE, JSON.stringify(list), 'utf8');
-  ftpSyncAnimes();
+  // MongoDB — asıl doğruluk kaynağı
+  await AnimeModel.deleteMany({});
+  if (list.length) await AnimeModel.insertMany(list, { ordered: false }).catch((e) => {
+    console.error('[AniLand] writeAnimes insertMany hatası:', e.message);
+  });
+  // Yerel dosya + FTP/CDN senkronu — sadece fallback amaçlı, best-effort
+  try {
+    fs.writeFileSync(ANIMES_FILE, JSON.stringify(list), 'utf8');
+    ftpSyncAnimes();
+  } catch (e) {
+    console.warn('[AniLand] Anime dosya/FTP fallback senkronu başarısız:', e.message);
+  }
 }
 
 async function withAnimes(fn) {
@@ -981,19 +988,12 @@ const routes = {
   // ── Anime API ────────────────────────────────────────────────────────────
 
   'GET /api/animes': async (req, res) => {
-    // BELLEK NOTU: Kataloğu parse edip yeniden stringify ETMEDEN doğrudan
-    // diskten stream ediyoruz. Böylece her istek devasa veriyi belleğe
-    // kopyalamıyor — sadece sabit boyutlu buffer'larla akıtıyor.
+    // Artık MongoDB'den okunuyor (users ile aynı kaynak).
     try {
-      if (!fs.existsSync(ANIMES_FILE)) return json(res, 200, { animes: [] }, req);
-      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', ...corsHeaders(req) });
-      res.write('{"animes":');
-      const stream = fs.createReadStream(ANIMES_FILE, { highWaterMark: 64 * 1024 });
-      stream.on('error', () => { try { res.end('[]}'); } catch {} });
-      stream.on('end', () => { try { res.end('}'); } catch {} });
-      req.on('close', () => stream.destroy());
-      stream.pipe(res, { end: false });
-    } catch {
+      const animes = await AnimeModel.find({}).lean();
+      return json(res, 200, { animes }, req);
+    } catch (e) {
+      console.error('[AniLand] GET /api/animes MongoDB hatası:', e.message);
       return json(res, 200, { animes: [] }, req);
     }
   },
